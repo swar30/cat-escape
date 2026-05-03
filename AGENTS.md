@@ -10,23 +10,23 @@ The current game is playable directly in a browser by opening `index.html`. It d
 
 - `index.html` - Complete game implementation: HTML shell, Tailwind CDN styling, canvas drawing, input handling, game loop, map, AI movement, collision, win/loss screens.
 - `cat.png` - Cat player sprite, currently `100 x 105` PNG.
-- `avatar-face.png` - Photo face avatar enemy sprite with a transparent background.
-- `avatar-dog.png` - Dog face/head avatar enemy sprite with transparent corners.
-- `avatar-glasses.png` - Glasses face/head avatar enemy sprite with transparent corners.
-- `avatar-smile.png` - Smiling face/head avatar enemy sprite with transparent corners.
-- `avatar-face-source.png` - Source generated/chroma-key image used to create `avatar-face.png`.
+- `avatar-face.png` - Close-up dog enemy sprite with transparent corners.
+- `avatar-dog.png` - Smiling dog enemy sprite with transparent corners.
+- `avatar-glasses.png` - Dog portrait enemy sprite with transparent corners.
+- `avatar-smile.png` - Mirrored close-up dog enemy sprite with transparent corners.
+- `avatar-face-source.png` - Source dog crop used to create `avatar-face.png`.
 - `AGENTS.md` - This file, used to brief future coding agents on the project.
 
 ## Current Game Design
 
-The player controls the cat inside a 16x16 tile maze. Four photo avatar enemies chase the cat through the maze. The goal is to survive for 20 seconds, then reach the randomly spawned escape portal.
+The player controls the cat inside a 16x16 tile maze. Four dog avatar enemies chase the cat through the maze. The goal is to survive for 20 seconds, then reach the randomly spawned escape portal.
 
 Current rules:
 
 - The map is a fixed 16x16 grid.
 - `1` means wall and `0` means floor.
 - The cat starts at tile `(1, 1)`.
-- Four avatars start around the maze and chase the cat. Each avatar uses a local photo face/head sprite with a colored circular outline.
+- Four avatars start around the maze and chase the cat. Each avatar uses a local dog face/head sprite with a colored circular outline.
 - Avatars use breadth-first search pathfinding toward the cat's target tile.
 - After 20 seconds, an emerald portal spawns on a random empty tile.
 - Touching the portal after it appears wins the game.
@@ -58,9 +58,9 @@ Developer/debug controls currently present in the game:
 - Movement is grid-based but animated between tiles with per-entity `progress`.
 - Collision checks use interpolated tile positions so moving entities can collide during transitions.
 - The canvas is resized responsively based on viewport size.
-- Photo avatars are loaded through the `avatarImages` map and referenced from avatar objects with an `image` key, for example `image: 'avatar-face'`.
-- Photo avatars are drawn as clipped circular sprites with the avatar's `color` used as an outline. If the image is missing or not loaded, the old colored canvas avatar drawing remains the fallback.
-- The current photo avatar was made from a face-only cutout. Prefer transparent PNG avatars; if transparency is not practical, use a clean white or flat solid background.
+- Dog avatars are loaded through the `avatarImages` map and referenced from avatar objects with an `image` key, for example `image: 'avatar-face'`.
+- Dog avatars are drawn as clipped circular sprites with the avatar's `color` used as an outline. If the image is missing or not loaded, the old colored canvas avatar drawing remains the fallback.
+- Prefer transparent PNG avatars; if transparency is not practical, use a clean white or flat solid background.
 
 ## Development Guidelines
 
