@@ -237,6 +237,7 @@
                 startScreen.classList.add('hidden');
                 gameOverScreen.classList.add('hidden');
                 winScreen.classList.add('hidden');
+                startCodeInput.blur();
                 
                 // Clear inline styles that override the Tailwind 'hidden' class
                 gameOverScreen.style.display = '';
@@ -273,7 +274,7 @@
             });
 
             window.addEventListener('keydown', (e) => {
-                if (e.target === startCodeInput) {
+                if (e.target === startCodeInput && gameState === 'START') {
                     if (e.code === 'Enter') {
                         btnStart.click();
                     }
