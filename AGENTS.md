@@ -39,6 +39,7 @@ Current rules:
 - Speed up: `+` key or the `+` button.
 - Speed down: `-` key or the `-` button.
 - Restart after game over: Space.
+- Optional start code: enter `1121` before pressing Play to let Space toggle wall pass-through while playing.
 
 Developer/debug controls currently present in the game:
 

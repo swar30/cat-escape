@@ -74,6 +74,16 @@
             <div class="bg-slate-800 p-3 rounded text-center">💻 WASD / Arrows</div>
             <div class="bg-slate-800 p-3 rounded text-center">📱 On-screen D-Pad</div>
         </div>
+        <label for="start-code-input" class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-2">Code</label>
+        <input
+            id="start-code-input"
+            type="text"
+            inputmode="numeric"
+            autocomplete="off"
+            class="w-48 mb-6 rounded-lg border-2 border-slate-600 bg-slate-950/80 px-4 py-3 text-center text-xl font-mono text-slate-100 outline-none transition-colors focus:border-orange-400"
+            placeholder="Optional"
+            aria-label="Optional start code"
+        >
         <button id="start-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 text-xl">
             PLAY NOW
         </button>
@@ -113,6 +123,7 @@
             const btnStart = document.getElementById('start-btn');
             const btnRestart = document.getElementById('restart-btn');
             const btnPlayAgain = document.getElementById('play-again-btn');
+            const startCodeInput = document.getElementById('start-code-input');
 
             // --- Game Constants ---
             const GRID_SIZE = 16;
@@ -148,6 +159,7 @@
             let loopStarted = false; // Prevent multiple game loops
             let avatarsFleeing = false; // Toggle for '0' key
             let passThroughWalls = false; // Toggle for left mouse click
+            let spaceWallPassEnabled = false; // Enabled by start code 1121
 
             // Controls
             let keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, a: false, s: false, d: false };
@@ -194,6 +206,7 @@
                 objectiveDisplay.className = "text-sm font-bold text-amber-400 animate-pulse";
                 avatarsFleeing = false;
                 passThroughWalls = false;
+                spaceWallPassEnabled = startCodeInput.value.trim() === '1121';
 
                 // Reset Cat
                 cat = { x: 1, y: 1, targetX: 1, targetY: 1, isMoving: false, progress: 0, speed: 6.0, dir: {x: 0, y: 1} };
@@ -248,6 +261,13 @@
             });
 
             window.addEventListener('keydown', (e) => {
+                if (e.target === startCodeInput) {
+                    if (e.code === 'Enter') {
+                        btnStart.click();
+                    }
+                    return;
+                }
+
                 if(keys.hasOwnProperty(e.key)) keys[e.key] = true;
                 updateNextDir();
 
@@ -263,8 +283,11 @@
                     avatarsFleeing = !avatarsFleeing;
                 }
 
-                // Press Space to restart after Game Over
-                if (e.code === 'Space' && gameState === 'GAMEOVER') {
+                if (e.code === 'Space' && gameState === 'PLAYING' && spaceWallPassEnabled) {
+                    e.preventDefault();
+                    passThroughWalls = !passThroughWalls;
+                } else if (e.code === 'Space' && gameState === 'GAMEOVER') {
+                    // Press Space to restart after Game Over
                     btnRestart.click();
                 }
             });
