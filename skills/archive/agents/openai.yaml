@@ -1,0 +1,4 @@
+interface:
+  display_name: "Archive"
+  short_description: "Package publish-ready project files into a zip."
+  default_prompt: "Create a publish-ready zip archive for this project."
