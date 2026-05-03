@@ -14,19 +14,21 @@ The current game is playable directly in a browser by opening `index.html`. It d
 - `avatar-dog.png` - Smiling dog enemy sprite with transparent corners.
 - `avatar-glasses.png` - Dog portrait enemy sprite with transparent corners.
 - `avatar-smile.png` - Mirrored close-up dog enemy sprite with transparent corners.
+- `avatar-collie.png` - Black-and-white collie enemy sprite.
 - `avatar-face-source.png` - Source dog crop used to create `avatar-face.png`.
+- `avatar-collie-source.png` - Source screenshot used to create `avatar-collie.png`.
 - `AGENTS.md` - This file, used to brief future coding agents on the project.
 
 ## Current Game Design
 
-The player controls the cat inside a 16x16 tile maze. Four dog avatar enemies chase the cat through the maze. The goal is to survive for 20 seconds, then reach the randomly spawned escape portal.
+The player controls the cat inside a 16x16 tile maze. Five dog avatar enemies chase the cat through the maze. The goal is to survive for 20 seconds, then reach the randomly spawned escape portal.
 
 Current rules:
 
 - The map is a fixed 16x16 grid.
 - `1` means wall and `0` means floor.
 - The cat starts at tile `(1, 1)`.
-- Four avatars start around the maze and chase the cat. Each avatar uses a local dog face/head sprite with a colored circular outline.
+- Five avatars start around the maze and chase the cat. Each avatar uses a local dog face/head sprite with a colored circular outline.
 - Avatars use breadth-first search pathfinding toward the cat's target tile.
 - After 20 seconds, an emerald portal spawns on a random empty tile.
 - Touching the portal after it appears wins the game.
