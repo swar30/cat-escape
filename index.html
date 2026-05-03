@@ -78,12 +78,17 @@
         <input
             id="start-code-input"
             type="text"
-            inputmode="numeric"
+            inputmode="text"
             autocomplete="off"
-            class="w-48 mb-6 rounded-lg border-2 border-slate-600 bg-slate-950/80 px-4 py-3 text-center text-xl font-mono text-slate-100 outline-none transition-colors focus:border-orange-400"
-            placeholder="Optional"
+            class="w-48 mb-3 rounded-lg border-2 border-slate-600 bg-slate-950/80 px-4 py-3 text-center text-xl font-mono text-slate-100 outline-none transition-colors focus:border-orange-400"
+            placeholder="Optional or ?"
             aria-label="Optional start code"
         >
+        <div id="start-code-help" class="hidden mb-6 w-72 rounded-lg border border-slate-700 bg-slate-950/90 p-3 text-sm text-slate-300">
+            <div class="font-bold text-orange-300 mb-2">Codes</div>
+            <div><span class="font-mono text-slate-100">1121</span> - Space toggles wall pass-through while playing.</div>
+            <div><span class="font-mono text-slate-100">6767</span> - Hold Space to make the cat 6x faster while playing.</div>
+        </div>
         <button id="start-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 text-xl">
             PLAY NOW
         </button>
@@ -124,11 +129,14 @@
             const btnRestart = document.getElementById('restart-btn');
             const btnPlayAgain = document.getElementById('play-again-btn');
             const startCodeInput = document.getElementById('start-code-input');
+            const startCodeHelp = document.getElementById('start-code-help');
 
             // --- Game Constants ---
             const GRID_SIZE = 16;
             let TILE_SIZE = 32; // Calculated dynamically
             const ESCAPE_TIME = 20; // Seconds until escape portal appears
+            const CAT_BASE_SPEED = 6.0;
+            const SPACE_SPEED_MULTIPLIER = 6;
 
             // 16x16 Map Design (1 = Wall, 0 = Floor)
             const mapTemplate = [
@@ -160,13 +168,15 @@
             let avatarsFleeing = false; // Toggle for '0' key
             let passThroughWalls = false; // Toggle for left mouse click
             let spaceWallPassEnabled = false; // Enabled by start code 1121
+            let spaceSpeedBoostEnabled = false; // Enabled by start code 6767
+            let spaceSpeedBoostActive = false;
 
             // Controls
             let keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, a: false, s: false, d: false };
             let nextDir = { x: 0, y: 0 };
 
             // Entities
-            let cat = { x: 1, y: 1, targetX: 1, targetY: 1, isMoving: false, progress: 0, speed: 6.0, dir: {x: 0, y: 1} };
+            let cat = { x: 1, y: 1, targetX: 1, targetY: 1, isMoving: false, progress: 0, speed: CAT_BASE_SPEED, dir: {x: 0, y: 1} };
             let avatars = [
                 { x: 14, y: 1, targetX: 14, targetY: 1, isMoving: false, progress: 0, speed: 4.0, color: '#ef4444', image: 'avatar-face' }, // Photo avatar
                 { x: 1, y: 14, targetX: 1, targetY: 14, isMoving: false, progress: 0, speed: 4.2, color: '#8b5cf6', image: 'avatar-dog' }, // Dog avatar
@@ -207,9 +217,11 @@
                 avatarsFleeing = false;
                 passThroughWalls = false;
                 spaceWallPassEnabled = startCodeInput.value.trim() === '1121';
+                spaceSpeedBoostEnabled = startCodeInput.value.trim() === '6767';
+                spaceSpeedBoostActive = false;
 
                 // Reset Cat
-                cat = { x: 1, y: 1, targetX: 1, targetY: 1, isMoving: false, progress: 0, speed: 6.0, dir: {x: 0, y: 1} };
+                cat = { x: 1, y: 1, targetX: 1, targetY: 1, isMoving: false, progress: 0, speed: CAT_BASE_SPEED, dir: {x: 0, y: 1} };
                 nextDir = { x: 0, y: 0 };
 
                 // Reset Avatars (Chasers)
@@ -283,9 +295,12 @@
                     avatarsFleeing = !avatarsFleeing;
                 }
 
-                if (e.code === 'Space' && gameState === 'PLAYING' && spaceWallPassEnabled) {
+                if (e.code === 'Space' && gameState === 'PLAYING' && spaceWallPassEnabled && !e.repeat) {
                     e.preventDefault();
                     passThroughWalls = !passThroughWalls;
+                } else if (e.code === 'Space' && gameState === 'PLAYING' && spaceSpeedBoostEnabled) {
+                    e.preventDefault();
+                    spaceSpeedBoostActive = true;
                 } else if (e.code === 'Space' && gameState === 'GAMEOVER') {
                     // Press Space to restart after Game Over
                     btnRestart.click();
@@ -293,6 +308,9 @@
             });
             window.addEventListener('keyup', (e) => {
                 if(keys.hasOwnProperty(e.key)) keys[e.key] = false;
+                if (e.code === 'Space') {
+                    spaceSpeedBoostActive = false;
+                }
                 updateNextDir();
             });
 
@@ -329,7 +347,19 @@
             });
 
             // --- UI Buttons ---
-            btnStart.addEventListener('click', initGame);
+            function updateStartCodeHelp() {
+                startCodeHelp.classList.toggle('hidden', startCodeInput.value.trim() !== '?');
+            }
+
+            startCodeInput.addEventListener('input', updateStartCodeHelp);
+
+            btnStart.addEventListener('click', () => {
+                if (startCodeInput.value.trim() === '?') {
+                    updateStartCodeHelp();
+                    return;
+                }
+                initGame();
+            });
             btnRestart.addEventListener('click', initGame);
             btnPlayAgain.addEventListener('click', initGame);
 
@@ -448,7 +478,8 @@
                 }
 
                 if (cat.isMoving) {
-                    cat.progress += cat.speed * dt;
+                    const effectiveCatSpeed = cat.speed * (spaceSpeedBoostActive ? SPACE_SPEED_MULTIPLIER : 1);
+                    cat.progress += effectiveCatSpeed * dt;
                     if (cat.progress >= 1.0) {
                         cat.x = cat.targetX;
                         cat.y = cat.targetY;
