@@ -157,14 +157,17 @@
             let cat = { x: 1, y: 1, targetX: 1, targetY: 1, isMoving: false, progress: 0, speed: 6.0, dir: {x: 0, y: 1} };
             let avatars = [
                 { x: 14, y: 1, targetX: 14, targetY: 1, isMoving: false, progress: 0, speed: 4.0, color: '#ef4444', image: 'avatar-face' }, // Photo avatar
-                { x: 1, y: 14, targetX: 1, targetY: 14, isMoving: false, progress: 0, speed: 4.2, color: '#8b5cf6' }, // Purple
-                { x: 14, y: 14, targetX: 14, targetY: 14, isMoving: false, progress: 0, speed: 3.8, color: '#06b6d4' }, // Cyan
-                { x: 7, y: 13, targetX: 7, targetY: 13, isMoving: false, progress: 0, speed: 4.1, color: '#f97316' }  // Orange
+                { x: 1, y: 14, targetX: 1, targetY: 14, isMoving: false, progress: 0, speed: 4.2, color: '#8b5cf6', image: 'avatar-dog' }, // Dog avatar
+                { x: 14, y: 14, targetX: 14, targetY: 14, isMoving: false, progress: 0, speed: 3.8, color: '#06b6d4', image: 'avatar-glasses' }, // Glasses avatar
+                { x: 7, y: 13, targetX: 7, targetY: 13, isMoving: false, progress: 0, speed: 4.1, color: '#f97316', image: 'avatar-smile' }  // Smile avatar
             ];
             
             const catImage = new Image();
             const avatarImages = {
-                'avatar-face': new Image()
+                'avatar-face': new Image(),
+                'avatar-dog': new Image(),
+                'avatar-glasses': new Image(),
+                'avatar-smile': new Image()
             };
             const redrawOnAssetLoad = () => draw();
 
@@ -175,6 +178,9 @@
 
             catImage.src = 'cat.png';
             avatarImages['avatar-face'].src = 'avatar-face.png';
+            avatarImages['avatar-dog'].src = 'avatar-dog.png';
+            avatarImages['avatar-glasses'].src = 'avatar-glasses.png';
+            avatarImages['avatar-smile'].src = 'avatar-smile.png';
 
             // --- Initialization ---
             function initGame() {
@@ -197,9 +203,9 @@
                 // Spawn at corners with slight speed variations to prevent exact stacking
                 avatars = [
                     { x: 14, y: 1, targetX: 14, targetY: 1, isMoving: false, progress: 0, speed: 4.0, color: '#ef4444', image: 'avatar-face' }, // Photo avatar
-                    { x: 1, y: 14, targetX: 1, targetY: 14, isMoving: false, progress: 0, speed: 4.2, color: '#8b5cf6' }, // Purple
-                    { x: 14, y: 14, targetX: 14, targetY: 14, isMoving: false, progress: 0, speed: 3.8, color: '#06b6d4' }, // Cyan
-                    { x: 7, y: 13, targetX: 7, targetY: 13, isMoving: false, progress: 0, speed: 4.1, color: '#f97316' }  // Orange
+                    { x: 1, y: 14, targetX: 1, targetY: 14, isMoving: false, progress: 0, speed: 4.2, color: '#8b5cf6', image: 'avatar-dog' }, // Dog avatar
+                    { x: 14, y: 14, targetX: 14, targetY: 14, isMoving: false, progress: 0, speed: 3.8, color: '#06b6d4', image: 'avatar-glasses' }, // Glasses avatar
+                    { x: 7, y: 13, targetX: 7, targetY: 13, isMoving: false, progress: 0, speed: 4.1, color: '#f97316', image: 'avatar-smile' }  // Smile avatar
                 ];
 
                 gameState = 'PLAYING';

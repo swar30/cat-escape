@@ -11,19 +11,22 @@ The current game is playable directly in a browser by opening `index.html`. It d
 - `index.html` - Complete game implementation: HTML shell, Tailwind CDN styling, canvas drawing, input handling, game loop, map, AI movement, collision, win/loss screens.
 - `cat.png` - Cat player sprite, currently `100 x 105` PNG.
 - `avatar-face.png` - Photo face avatar enemy sprite with a transparent background.
+- `avatar-dog.png` - Dog face/head avatar enemy sprite with transparent corners.
+- `avatar-glasses.png` - Glasses face/head avatar enemy sprite with transparent corners.
+- `avatar-smile.png` - Smiling face/head avatar enemy sprite with transparent corners.
 - `avatar-face-source.png` - Source generated/chroma-key image used to create `avatar-face.png`.
 - `AGENTS.md` - This file, used to brief future coding agents on the project.
 
 ## Current Game Design
 
-The player controls the cat inside a 16x16 tile maze. Four colored avatar enemies chase the cat through the maze. The goal is to survive for 20 seconds, then reach the randomly spawned escape portal.
+The player controls the cat inside a 16x16 tile maze. Four photo avatar enemies chase the cat through the maze. The goal is to survive for 20 seconds, then reach the randomly spawned escape portal.
 
 Current rules:
 
 - The map is a fixed 16x16 grid.
 - `1` means wall and `0` means floor.
 - The cat starts at tile `(1, 1)`.
-- Four avatars start around the maze and chase the cat. The first avatar uses the local photo face sprite; the rest use colored canvas-drawn fallback avatars.
+- Four avatars start around the maze and chase the cat. Each avatar uses a local photo face/head sprite with a colored circular outline.
 - Avatars use breadth-first search pathfinding toward the cat's target tile.
 - After 20 seconds, an emerald portal spawns on a random empty tile.
 - Touching the portal after it appears wins the game.
