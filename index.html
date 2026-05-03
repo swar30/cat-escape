@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cat Escape: 16x16</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: white;
+            overflow: hidden;
+            touch-action: none; /* Prevent zooming/scrolling on mobile */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            image-rendering: pixelated;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+        }
+        .dpad-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            user-select: none;
+            transition: background-color 0.1s;
+        }
+        .dpad-btn:active {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col items-center justify-center relative">
+
+    <!-- UI Overlay -->
+    <div id="ui-layer" class="absolute inset-0 pointer-events-none flex flex-col items-center justify-between py-6 z-10">
+        
+        <div class="flex justify-between w-full max-w-md px-6">
+            <div class="bg-slate-800/80 px-4 py-2 rounded-lg border border-slate-600 shadow-lg pointer-events-auto">
+                <span class="text-sm text-slate-400 font-bold uppercase tracking-wider">Time</span>
+                <div id="timer-display" class="text-2xl font-mono text-emerald-400">00:00</div>
+            </div>
+            <div class="bg-slate-800/80 px-4 py-2 rounded-lg border border-slate-600 shadow-lg pointer-events-auto flex items-center">
+                <span id="objective-display" class="text-sm font-bold text-amber-400 animate-pulse">SURVIVE 20s TO ESCAPE</span>
+            </div>
+        </div>
+
+        <!-- Virtual D-PAD for Touch Screens -->
+        <div class="md:hidden grid grid-cols-3 gap-2 p-4 pointer-events-auto opacity-70 w-64 h-64 mb-4">
+            <div></div>
+            <button class="dpad-btn" id="btn-up">↑</button>
+            <div></div>
+            <button class="dpad-btn" id="btn-left">←</button>
+            <button class="dpad-btn" id="btn-down">↓</button>
+            <button class="dpad-btn" id="btn-right">→</button>
+        </div>
+
+        <!-- Speed Controls -->
+        <div class="absolute bottom-1/2 right-4 transform translate-y-1/2 flex flex-col gap-3 pointer-events-auto opacity-80 z-20">
+            <button id="btn-speed-up" class="w-12 h-12 bg-slate-800 border-2 border-slate-500 rounded-full text-2xl font-bold text-emerald-400 shadow-lg flex items-center justify-center active:bg-slate-600 transition-colors" title="Faster">+</button>
+            <button id="btn-speed-down" class="w-12 h-12 bg-slate-800 border-2 border-slate-500 rounded-full text-2xl font-bold text-rose-400 shadow-lg flex items-center justify-center active:bg-slate-600 transition-colors" title="Slower">-</button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="start-screen" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center z-50 backdrop-blur-sm transition-opacity">
+        <h1 class="text-5xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-rose-400 text-center">CAT ESCAPE</h1>
+        <p class="text-slate-300 mb-8 text-center max-w-md px-4">You are the Cat. Avatars are trying to catch you. Navigate the 16x16 abstractions, survive for 20 seconds, and find the escape portal!</p>
+        <div class="flex gap-4 mb-8 text-sm text-slate-400">
+            <div class="bg-slate-800 p-3 rounded text-center">💻 WASD / Arrows</div>
+            <div class="bg-slate-800 p-3 rounded text-center">📱 On-screen D-Pad</div>
+        </div>
+        <button id="start-btn" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 text-xl">
+            PLAY NOW
+        </button>
+    </div>
+
+    <div id="game-over-screen" class="absolute inset-0 bg-red-950/90 hidden flex-col items-center justify-center z-50 backdrop-blur-md">
+        <h1 class="text-6xl font-black mb-2 text-red-500">CAUGHT!</h1>
+        <p class="text-xl text-red-200 mb-8">The avatars got you.</p>
+        <button id="restart-btn" class="bg-slate-100 text-red-900 hover:bg-white font-bold py-3 px-8 rounded-full shadow-lg transition-all text-xl">
+            TRY AGAIN
+        </button>
+    </div>
+
+    <div id="win-screen" class="absolute inset-0 bg-emerald-950/90 hidden flex-col items-center justify-center z-50 backdrop-blur-md">
+        <h1 class="text-6xl font-black mb-2 text-emerald-400">ESCAPED!</h1>
+        <p class="text-xl text-emerald-200 mb-8">You successfully outsmarted them.</p>
+        <button id="play-again-btn" class="bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all text-xl">
+            PLAY AGAIN
+        </button>
+    </div>
+
+    <!-- Main Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        window.onload = function () {
+            // --- DOM Elements ---
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            const startScreen = document.getElementById('start-screen');
+            const gameOverScreen = document.getElementById('game-over-screen');
+            const winScreen = document.getElementById('win-screen');
+            const timerDisplay = document.getElementById('timer-display');
+            const objectiveDisplay = document.getElementById('objective-display');
+            
+            const btnStart = document.getElementById('start-btn');
+            const btnRestart = document.getElementById('restart-btn');
+            const btnPlayAgain = document.getElementById('play-again-btn');
+
+            // --- Game Constants ---
+            const GRID_SIZE = 16;
+            let TILE_SIZE = 32; // Calculated dynamically
+            const ESCAPE_TIME = 20; // Seconds until escape portal appears
+
+            // 16x16 Map Design (1 = Wall, 0 = Floor)
+            const mapTemplate = [
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                [1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,1],
+                [1,0,1,1,1,0,1,0,0,1,0,1,1,1,0,1],
+                [1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+                [1,0,1,0,1,1,0,1,1,0,1,1,0,1,0,1],
+                [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+                [1,1,1,0,1,0,1,1,1,1,0,1,0,1,1,1],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,0,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+                [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+                [1,1,1,1,0,1,1,0,0,1,1,0,1,1,1,1],
+                [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+                [1,0,1,1,1,1,1,0,0,1,1,1,1,1,0,1],
+                [1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
+                [1,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1],
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+            ];
+
+            // --- Game State ---
+            let gameState = 'START'; // START, PLAYING, GAMEOVER, WIN
+            let lastTime = 0;
+            let timeElapsed = 0;
+            let map = mapTemplate.map(row => [...row]); // Pre-populate so background draws
+            let escapePortal = null; // {x, y}
+            let loopStarted = false; // Prevent multiple game loops
+            let avatarsFleeing = false; // Toggle for '0' key
+            let passThroughWalls = false; // Toggle for left mouse click
+
+            // Controls
+            let keys = { ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, w: false, a: false, s: false, d: false };
+            let nextDir = { x: 0, y: 0 };
+
+            // Entities
+            let cat = { x: 1, y: 1, targetX: 1, targetY: 1, isMoving: false, progress: 0, speed: 6.0, dir: {x: 0, y: 1} };
+            let avatars = [
+                { x: 14, y: 1, targetX: 14, targetY: 1, isMoving: false, progress: 0, speed: 4.0, color: '#ef4444', image: 'avatar-face' }, // Photo avatar
+                { x: 1, y: 14, targetX: 1, targetY: 14, isMoving: false, progress: 0, speed: 4.2, color: '#8b5cf6' }, // Purple
+                { x: 14, y: 14, targetX: 14, targetY: 14, isMoving: false, progress: 0, speed: 3.8, color: '#06b6d4' }, // Cyan
+                { x: 7, y: 13, targetX: 7, targetY: 13, isMoving: false, progress: 0, speed: 4.1, color: '#f97316' }  // Orange
+            ];
+            
+            const catImage = new Image();
+            const avatarImages = {
+                'avatar-face': new Image()
+            };
+            const redrawOnAssetLoad = () => draw();
+
+            catImage.addEventListener('load', redrawOnAssetLoad);
+            Object.values(avatarImages).forEach((image) => {
+                image.addEventListener('load', redrawOnAssetLoad);
+            });
+
+            catImage.src = 'cat.png';
+            avatarImages['avatar-face'].src = 'avatar-face.png';
+
+            // --- Initialization ---
+            function initGame() {
+                // Deep copy map
+                map = mapTemplate.map(row => [...row]);
+                
+                // Reset Time
+                timeElapsed = 0;
+                escapePortal = null;
+                objectiveDisplay.textContent = `SURVIVE ${ESCAPE_TIME}s TO ESCAPE`;
+                objectiveDisplay.className = "text-sm font-bold text-amber-400 animate-pulse";
+                avatarsFleeing = false;
+                passThroughWalls = false;
+
+                // Reset Cat
+                cat = { x: 1, y: 1, targetX: 1, targetY: 1, isMoving: false, progress: 0, speed: 6.0, dir: {x: 0, y: 1} };
+                nextDir = { x: 0, y: 0 };
+
+                // Reset Avatars (Chasers)
+                // Spawn at corners with slight speed variations to prevent exact stacking
+                avatars = [
+                    { x: 14, y: 1, targetX: 14, targetY: 1, isMoving: false, progress: 0, speed: 4.0, color: '#ef4444', image: 'avatar-face' }, // Photo avatar
+                    { x: 1, y: 14, targetX: 1, targetY: 14, isMoving: false, progress: 0, speed: 4.2, color: '#8b5cf6' }, // Purple
+                    { x: 14, y: 14, targetX: 14, targetY: 14, isMoving: false, progress: 0, speed: 3.8, color: '#06b6d4' }, // Cyan
+                    { x: 7, y: 13, targetX: 7, targetY: 13, isMoving: false, progress: 0, speed: 4.1, color: '#f97316' }  // Orange
+                ];
+
+                gameState = 'PLAYING';
+                startScreen.classList.add('hidden');
+                gameOverScreen.classList.add('hidden');
+                winScreen.classList.add('hidden');
+                
+                // Clear inline styles that override the Tailwind 'hidden' class
+                gameOverScreen.style.display = '';
+                winScreen.style.display = '';
+                
+                lastTime = performance.now();
+                if (!loopStarted) {
+                    loopStarted = true;
+                    requestAnimationFrame(gameLoop);
+                }
+            }
+
+            // --- Resize Handling ---
+            function resizeCanvas() {
+                const isMobile = window.innerWidth < 768;
+                // Leave room for UI
+                const availableHeight = isMobile ? window.innerHeight - 280 : window.innerHeight - 100; 
+                const availableWidth = window.innerWidth - 40;
+                
+                const minDimension = Math.min(availableWidth, availableHeight);
+                TILE_SIZE = Math.floor(minDimension / GRID_SIZE);
+                
+                canvas.width = TILE_SIZE * GRID_SIZE;
+                canvas.height = TILE_SIZE * GRID_SIZE;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas(); // Initial call
+
+            // --- Input Handling ---
+            canvas.addEventListener('mousedown', (e) => {
+                if (e.button === 0 && gameState === 'PLAYING') {
+                    passThroughWalls = !passThroughWalls;
+                }
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if(keys.hasOwnProperty(e.key)) keys[e.key] = true;
+                updateNextDir();
+
+                // Keyboard Speed Controls (+ / -)
+                if (e.key === '+' || e.key === '=') {
+                    cat.speed += 1.0;
+                } else if (e.key === '-' || e.key === '_') {
+                    cat.speed = Math.max(1.0, cat.speed - 1.0); // Prevent negative/zero speed
+                }
+
+                // Toggle avatars fleeing behavior
+                if (e.key === '0') {
+                    avatarsFleeing = !avatarsFleeing;
+                }
+
+                // Press Space to restart after Game Over
+                if (e.code === 'Space' && gameState === 'GAMEOVER') {
+                    btnRestart.click();
+                }
+            });
+            window.addEventListener('keyup', (e) => {
+                if(keys.hasOwnProperty(e.key)) keys[e.key] = false;
+                updateNextDir();
+            });
+
+            function updateNextDir() {
+                if (keys.ArrowUp || keys.w) nextDir = {x: 0, y: -1};
+                else if (keys.ArrowDown || keys.s) nextDir = {x: 0, y: 1};
+                else if (keys.ArrowLeft || keys.a) nextDir = {x: -1, y: 0};
+                else if (keys.ArrowRight || keys.d) nextDir = {x: 1, y: 0};
+                else nextDir = {x: 0, y: 0};
+            }
+
+            // Virtual D-pad logic
+            const bindTouch = (id, dx, dy) => {
+                const btn = document.getElementById(id);
+                const start = (e) => { e.preventDefault(); nextDir = {x: dx, y: dy}; };
+                const end = (e) => { e.preventDefault(); nextDir = {x: 0, y: 0}; };
+                btn.addEventListener('touchstart', start);
+                btn.addEventListener('touchend', end);
+                btn.addEventListener('mousedown', start);
+                btn.addEventListener('mouseup', end);
+                btn.addEventListener('mouseleave', end);
+            };
+            bindTouch('btn-up', 0, -1);
+            bindTouch('btn-down', 0, 1);
+            bindTouch('btn-left', -1, 0);
+            bindTouch('btn-right', 1, 0);
+
+            // --- Speed Control Buttons ---
+            document.getElementById('btn-speed-up').addEventListener('click', () => {
+                cat.speed += 1.0;
+            });
+            document.getElementById('btn-speed-down').addEventListener('click', () => {
+                cat.speed = Math.max(1.0, cat.speed - 1.0);
+            });
+
+            // --- UI Buttons ---
+            btnStart.addEventListener('click', initGame);
+            btnRestart.addEventListener('click', initGame);
+            btnPlayAgain.addEventListener('click', initGame);
+
+            // --- Pathfinding (BFS) ---
+            function getNextMoveTowardsPlayer(startX, startY, targetX, targetY) {
+                if (startX === targetX && startY === targetY) return null;
+
+                let queue = [{x: startX, y: startY, path: []}];
+                let visited = new Set();
+                visited.add(`${startX},${startY}`);
+
+                const dirs = [{x:0, y:-1}, {x:1, y:0}, {x:0, y:1}, {x:-1, y:0}];
+
+                while (queue.length > 0) {
+                    let curr = queue.shift();
+
+                    // If we reached target, return the FIRST step taken to get there
+                    if (curr.x === targetX && curr.y === targetY) {
+                        return curr.path.length > 0 ? curr.path[0] : null;
+                    }
+
+                    for (let d of dirs) {
+                        let nx = curr.x + d.x;
+                        let ny = curr.y + d.y;
+
+                        // Check bounds and walls
+                        if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE && map[ny][nx] === 0) {
+                            let key = `${nx},${ny}`;
+                            if (!visited.has(key)) {
+                                visited.add(key);
+                                queue.push({
+                                    x: nx, 
+                                    y: ny, 
+                                    path: [...curr.path, {x: nx, y: ny, dx: d.x, dy: d.y}]
+                                });
+                            }
+                        }
+                    }
+                }
+                return null; // No path found
+            }
+
+        function getNextMoveAwayFromPlayer(startX, startY, targetX, targetY) {
+            const dirs = [{x:0, y:-1}, {x:1, y:0}, {x:0, y:1}, {x:-1, y:0}];
+            let bestMove = null;
+            let maxDist = -1;
+
+            for (let d of dirs) {
+                let nx = startX + d.x;
+                let ny = startY + d.y;
+                if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE && map[ny][nx] === 0) {
+                    let distSq = Math.pow(nx - targetX, 2) + Math.pow(ny - targetY, 2);
+                    if (distSq > maxDist) {
+                        maxDist = distSq;
+                        bestMove = {x: nx, y: ny};
+                    }
+                }
+            }
+            return bestMove;
+        }
+
+            // --- Game Logic ---
+            function canMove(x, y, ignoreWalls = false) {
+                if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return false;
+                if (ignoreWalls) return true;
+                return map[y][x] === 0;
+            }
+
+            function spawnEscapePortal() {
+                // Find empty floor spots
+                let emptySpots = [];
+                for(let y=0; y<GRID_SIZE; y++) {
+                    for(let x=0; x<GRID_SIZE; x++) {
+                        if(map[y][x] === 0 && (x !== cat.targetX || y !== cat.targetY)) {
+                            emptySpots.push({x, y});
+                        }
+                    }
+                }
+                if (emptySpots.length > 0) {
+                    let spot = emptySpots[Math.floor(Math.random() * emptySpots.length)];
+                    escapePortal = spot;
+                    objectiveDisplay.textContent = "PORTAL OPEN! ESCAPE NOW!";
+                    objectiveDisplay.className = "text-sm font-bold text-emerald-400 animate-pulse";
+                }
+            }
+
+            function update(dt) {
+                if (gameState !== 'PLAYING') return;
+
+                // Time tracking
+                timeElapsed += dt;
+                let seconds = Math.floor(timeElapsed);
+                let displaySecs = String(seconds).padStart(2, '0');
+                timerDisplay.textContent = `00:${displaySecs}`;
+
+                // Spawn escape portal after threshold
+                if (seconds >= ESCAPE_TIME && !escapePortal) {
+                    spawnEscapePortal();
+                }
+
+                // 1. Update Cat
+                if (!cat.isMoving) {
+                    // Try to start moving if input exists
+                    if (nextDir.x !== 0 || nextDir.y !== 0) {
+                        if (canMove(cat.x + nextDir.x, cat.y + nextDir.y, passThroughWalls)) {
+                            cat.targetX = cat.x + nextDir.x;
+                            cat.targetY = cat.y + nextDir.y;
+                            cat.dir = {...nextDir};
+                            cat.isMoving = true;
+                            cat.progress = 0;
+                        } else {
+                            // Turn to face the wall even if we can't move
+                            cat.dir = {...nextDir};
+                        }
+                    }
+                }
+
+                if (cat.isMoving) {
+                    cat.progress += cat.speed * dt;
+                    if (cat.progress >= 1.0) {
+                        cat.x = cat.targetX;
+                        cat.y = cat.targetY;
+                        cat.isMoving = false;
+                        cat.progress = 0;
+
+                        // Check portal win condition
+                        if (escapePortal && cat.x === escapePortal.x && cat.y === escapePortal.y) {
+                            gameState = 'WIN';
+                            winScreen.classList.remove('hidden');
+                            winScreen.style.display = 'flex';
+                            return;
+                        }
+                    }
+                }
+
+                // 2. Update Avatars (Chasers)
+                for (let avatar of avatars) {
+                    if (!avatar.isMoving) {
+                        let step = null;
+                        if (avatarsFleeing) {
+                            step = getNextMoveAwayFromPlayer(avatar.x, avatar.y, cat.targetX, cat.targetY);
+                        } else {
+                            // Calculate next step towards the cat's TARGET position for smarter cutoff
+                            step = getNextMoveTowardsPlayer(avatar.x, avatar.y, cat.targetX, cat.targetY);
+                            
+                            // Fallback: target cat's current position if target is unreachable
+                            if (!step) step = getNextMoveTowardsPlayer(avatar.x, avatar.y, cat.x, cat.y);
+                        }
+
+                        if (step && canMove(step.x, step.y)) {
+                            avatar.targetX = step.x;
+                            avatar.targetY = step.y;
+                            avatar.isMoving = true;
+                            avatar.progress = 0;
+                        }
+                    }
+
+                    if (avatar.isMoving) {
+                        avatar.progress += avatar.speed * dt;
+                        if (avatar.progress >= 1.0) {
+                            avatar.x = avatar.targetX;
+                            avatar.y = avatar.targetY;
+                            avatar.isMoving = false;
+                            avatar.progress = 0;
+                        }
+                    }
+
+                    // 3. Collision Detection (Interpolated coordinates to catch exact overlap during transition)
+                    let catPixelX = cat.x + (cat.targetX - cat.x) * cat.progress;
+                    let catPixelY = cat.y + (cat.targetY - cat.y) * cat.progress;
+                    
+                    let avPixelX = avatar.x + (avatar.targetX - avatar.x) * avatar.progress;
+                    let avPixelY = avatar.y + (avatar.targetY - avatar.y) * avatar.progress;
+
+                    let distSq = Math.pow(catPixelX - avPixelX, 2) + Math.pow(catPixelY - avPixelY, 2);
+                    
+                    if (distSq < 0.3) { // Threshold for collision
+                        gameState = 'GAMEOVER';
+                        gameOverScreen.classList.remove('hidden');
+                        gameOverScreen.style.display = 'flex';
+                    }
+                }
+            }
+
+            // --- Rendering ---
+            function draw() {
+                // Clear & fill background
+                ctx.fillStyle = '#1e293b'; // Slate-800
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw Map
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        let px = x * TILE_SIZE;
+                        let py = y * TILE_SIZE;
+
+                        if (map[y] && map[y][x] === 1) {
+                            // Wall Block
+                            ctx.fillStyle = '#334155'; // Slate-700
+                            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                            
+                            // Top bevel
+                            ctx.fillStyle = '#475569';
+                            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE * 0.2);
+                            
+                            // Border
+                            ctx.strokeStyle = '#0f172a';
+                            ctx.lineWidth = 1;
+                            ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+                        } else {
+                            // Floor Checkerboard
+                            if ((x + y) % 2 === 0) {
+                                ctx.fillStyle = '#1e293b'; 
+                            } else {
+                                ctx.fillStyle = '#0f172a';
+                            }
+                            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+                        }
+                    }
+                }
+
+                // Draw Escape Portal
+                if (escapePortal) {
+                    let px = escapePortal.x * TILE_SIZE + TILE_SIZE/2;
+                    let py = escapePortal.y * TILE_SIZE + TILE_SIZE/2;
+                    
+                    // Pulsing effect
+                    let pulse = Math.abs(Math.sin(timeElapsed * 3)) * 0.5 + 0.5;
+                    
+                    ctx.beginPath();
+                    ctx.arc(px, py, (TILE_SIZE/2) * 0.8, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(16, 185, 129, ${0.4 * pulse})`; // Emerald glow
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(px, py, (TILE_SIZE/2) * 0.5, 0, Math.PI * 2);
+                    ctx.fillStyle = '#34d399';
+                    ctx.fill();
+                    
+                    // Spiral/Star detail inside
+                    ctx.fillStyle = '#ecfdf5';
+                    ctx.fillRect(px - 2, py - TILE_SIZE*0.3, 4, TILE_SIZE*0.6);
+                    ctx.fillRect(px - TILE_SIZE*0.3, py - 2, TILE_SIZE*0.6, 4);
+                }
+
+                // Helper to get interpolated pixel coordinates
+                const getPixelPos = (entity) => {
+                    return {
+                        x: (entity.x + (entity.targetX - entity.x) * entity.progress) * TILE_SIZE + TILE_SIZE/2,
+                        y: (entity.y + (entity.targetY - entity.y) * entity.progress) * TILE_SIZE + TILE_SIZE/2
+                    };
+                };
+
+                // Draw Avatars (Chasers)
+                for (let avatar of avatars) {
+                    let pos = getPixelPos(avatar);
+                    let size = TILE_SIZE * 0.7;
+                    let avatarImage = avatar.image ? avatarImages[avatar.image] : null;
+
+                    if (avatarImage && avatarImage.complete && avatarImage.naturalWidth > 0) {
+                        let imgSize = TILE_SIZE * 0.9;
+
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.arc(pos.x, pos.y, imgSize / 2, 0, Math.PI * 2);
+                        ctx.clip();
+                        ctx.drawImage(avatarImage, pos.x - imgSize / 2, pos.y - imgSize / 2, imgSize, imgSize);
+                        ctx.restore();
+
+                        ctx.beginPath();
+                        ctx.arc(pos.x, pos.y, imgSize / 2, 0, Math.PI * 2);
+                        ctx.strokeStyle = avatar.color;
+                        ctx.lineWidth = Math.max(2, TILE_SIZE * 0.08);
+                        ctx.stroke();
+                        continue;
+                    }
+
+                    ctx.fillStyle = avatar.color;
+                    
+                    // Simple humanoid shape (Circle head, rounded rect body)
+                    ctx.beginPath();
+                    // Body
+                    ctx.roundRect(pos.x - size/3, pos.y - size/4, size/1.5, size/1.5, 4);
+                    ctx.fill();
+                    
+                    // Head
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y - size/2, size/3, 0, Math.PI*2);
+                    ctx.fill();
+
+                    // Angry Eyes
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(pos.x - size/6, pos.y - size/1.8, size/8, size/8);
+                    ctx.fillRect(pos.x + size/12, pos.y - size/1.8, size/8, size/8);
+                    
+                    // Eye pupils
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(pos.x - size/6 + 1, pos.y - size/1.8 + 1, size/16, size/16);
+                    ctx.fillRect(pos.x + size/12 + 1, pos.y - size/1.8 + 1, size/16, size/16);
+                }
+
+                // Draw Cat (Player)
+                let catPos = getPixelPos(cat);
+                let catSize = TILE_SIZE * 0.6;
+
+                ctx.save();
+                ctx.translate(catPos.x, catPos.y);
+                
+                if (passThroughWalls) {
+                    ctx.globalAlpha = 0.5;
+                }
+
+                // --- CAT AVATAR FROM PNG ---
+                let imgSize = TILE_SIZE * 0.9;
+                ctx.drawImage(catImage, -imgSize/2, -imgSize/2, imgSize, imgSize);
+
+                ctx.restore();
+            }
+
+            // --- Main Game Loop ---
+            function gameLoop(timestamp) {
+                if (gameState !== 'PLAYING') {
+                    lastTime = timestamp;
+                    requestAnimationFrame(gameLoop);
+                    return;
+                }
+
+                // Delta time in seconds
+                let dt = (timestamp - lastTime) / 1000;
+                lastTime = timestamp;
+
+                // Cap dt to prevent huge jumps if tab is inactive
+                if (dt > 0.1) dt = 0.1;
+
+                update(dt);
+                draw();
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            // Run initial draw so the canvas isn't blank before starting
+            draw();
+        };
+    </script>
+</body>
+</html>
