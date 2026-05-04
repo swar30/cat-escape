@@ -2,13 +2,15 @@
 
 ## Project Snapshot
 
-This folder contains a small browser game called **Cat Escape**. It is built as a single static HTML page with canvas rendering and a local cat sprite image.
+This folder contains a small browser game called **Cat Escape**. It is built as a static HTML/CSS/JavaScript page with canvas rendering and local sprite images.
 
 The current game is playable directly in a browser by opening `index.html`. It does not have a package manager, build step, test runner, or local server requirement at the moment.
 
 ## Files
 
-- `index.html` - Complete game implementation: HTML shell, Tailwind CDN styling, canvas drawing, input handling, game loop, map, AI movement, collision, win/loss screens.
+- `index.html` - HTML shell for the game UI, canvas, modals, and controls.
+- `styles.css` - Local CSS for body, canvas, and mobile controls.
+- `game.js` - Game implementation: canvas drawing, input handling, game loop, map, AI movement, collision, win/loss screens.
 - `cat.png` - Cat player sprite, currently `100 x 105` PNG.
 - `avatar-face.png` - Close-up dog enemy sprite with transparent corners.
 - `avatar-dog.png` - Smiling dog enemy sprite with transparent corners.
