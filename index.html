@@ -682,6 +682,16 @@
           })).filter((move) => canMove(move.x, move.y));
         }
 
+        function countOpenNeighborTiles(x, y) {
+          return AVATAR_DIRECTIONS.filter((dir) =>
+            canMove(x + dir.x, y + dir.y),
+          ).length;
+        }
+
+        function isTunnelTile(x, y) {
+          return countOpenNeighborTiles(x, y) <= 2;
+        }
+
         function pickRandomAvatarDirection(avatar) {
           let moves = getOpenAvatarMoves(avatar);
           if (moves.length === 0) return null;
@@ -709,6 +719,7 @@
           const rightX = avatar.x + rightDir.x;
           const rightY = avatar.y + rightDir.y;
           if (!canMove(rightX, rightY)) return null;
+          if (!isTunnelTile(rightX, rightY)) return null;
 
           avatar.dir = rightDir;
           return { x: rightX, y: rightY };
