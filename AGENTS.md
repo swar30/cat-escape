@@ -48,16 +48,12 @@ Current rules:
 
 - Keyboard movement: arrow keys or WASD.
 - Mobile movement: on-screen D-pad.
-- Speed up: `+` key or the `+` button.
-- Speed down: `-` key or the `-` button.
+- Speed up: `+` key.
+- Speed down: `-` key.
 - Restart after game over: Space.
 - Optional start code: enter `1121` before pressing Play to let Space toggle wall pass-through while playing.
 - Optional start code: enter `6767` before pressing Play to let Space make the cat move 6 times faster while held.
 - Code help: enter `?` in the code box to show all available codes.
-
-Developer/debug controls currently present in the game:
-
-- Left-click the canvas while playing to toggle cat wall pass-through mode.
 
 ## Implementation Notes
 

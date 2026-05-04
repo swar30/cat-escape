@@ -42,10 +42,6 @@ canvas {
     gap: 12px;
     padding-top: 12px;
   }
-  .mobile-speed-btn {
-    width: clamp(48px, 13vw, 56px);
-    height: clamp(48px, 13vw, 56px);
-  }
   .mobile-dpad {
     width: clamp(168px, 52vw, 224px);
     height: clamp(168px, 52vw, 224px);

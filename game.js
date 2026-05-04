@@ -47,7 +47,7 @@ window.onload = function () {
   let map = getLevelMap(currentLevelIndex); // Pre-populate so background draws
   let escapePortal = null; // {x, y}
   let loopStarted = false; // Prevent multiple game loops
-  let passThroughWalls = false; // Toggle for left mouse click
+  let passThroughWalls = false;
   let spaceWallPassEnabled = false; // Enabled by start code 1121
   let spaceSpeedBoostEnabled = false; // Enabled by start code 6767
   let spaceSpeedBoostActive = false;
@@ -336,12 +336,6 @@ window.onload = function () {
   resizeCanvas(); // Initial call
 
   // --- Input Handling ---
-  canvas.addEventListener("mousedown", (e) => {
-    if (e.button === 0 && gameState === "PLAYING") {
-      passThroughWalls = !passThroughWalls;
-    }
-  });
-
   window.addEventListener("keydown", (e) => {
     if (gameState === "START" && e.code === "Enter") {
       btnStart.click();
@@ -422,24 +416,6 @@ window.onload = function () {
   bindTouch("btn-down", 0, 1);
   bindTouch("btn-left", -1, 0);
   bindTouch("btn-right", 1, 0);
-
-  // --- Speed Control Buttons ---
-  const speedUp = () => {
-    cat.speed += 1.0;
-  };
-  const speedDown = () => {
-    cat.speed = Math.max(1.0, cat.speed - 1.0);
-  };
-  ["btn-speed-up", "btn-speed-up-mobile"].forEach((id) => {
-    document.getElementById(id).addEventListener("click", () => {
-      speedUp();
-    });
-  });
-  ["btn-speed-down", "btn-speed-down-mobile"].forEach((id) => {
-    document.getElementById(id).addEventListener("click", () => {
-      speedDown();
-    });
-  });
 
   // --- UI Buttons ---
   function updateStartCodeHelp() {
