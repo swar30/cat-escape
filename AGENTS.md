@@ -11,7 +11,7 @@ The current game is playable directly in a browser by opening `index.html`. It d
 - `index.html` - HTML shell for the game UI, canvas, modals, and controls.
 - `styles.css` - Local CSS for body, canvas, and mobile controls.
 - `game.js` - Game implementation: canvas drawing, input handling, game loop, map, AI movement, collision, win/loss screens.
-- `levels.js` - Static data for the 20 pre-generated 16x16 level maps.
+- `levels.js` - Static data for the 20 pre-generated 15x15 level maps.
 - `cat.png` - Cat player sprite, currently `100 x 105` PNG.
 - `avatar-face.png` - Close-up dog enemy sprite with transparent corners.
 - `avatar-dog.png` - Smiling dog enemy sprite with transparent corners.
@@ -24,13 +24,13 @@ The current game is playable directly in a browser by opening `index.html`. It d
 
 ## Current Game Design
 
-The player controls the cat inside a 16x16 tile maze. Five dog avatar enemies wander through the maze. The goal is to survive for 20 seconds, then reach the randomly spawned escape portal. The game has 20 pre-generated levels, and each win advances to the next level.
+The player controls the cat inside a 15x15 tile maze. Five dog avatar enemies wander through the maze. The goal is to survive for 20 seconds, then reach the randomly spawned escape portal. The game has 20 pre-generated levels, and each win advances to the next level.
 
 Current rules:
 
-- Each level map is a pre-generated 16x16 grid stored in `levels.js`.
+- Each level map is a pre-generated 15x15 grid stored in `levels.js`.
 - `1` means wall and `0` means floor.
-- The level maps keep every floor tile connected, avoid dead-end floor tiles, and avoid 2x2 solid wall blocks so walls never appear double-thick.
+- The level maps keep every floor tile connected, avoid dead-end floor tiles, avoid 2x2 open floor blocks so passages never appear double-wide, and avoid 2x2 solid wall blocks so walls never appear double-thick.
 - The cat starts at tile `(1, 1)`.
 - Five avatars start around the maze and wander independently. Each avatar uses a local dog face/head sprite with a colored circular outline.
 - Avatars chase the cat while they have direct line of sight in the same row or column with no wall between them. Without line of sight, avatars take an open right turn only when it leads into a tunnel-like tile with at most two exits. Otherwise they keep moving in their current direction until they hit a wall, then pick a random open direction that does not immediately backtrack unless they are at a dead end.

@@ -18,7 +18,7 @@ window.onload = function () {
   const startCodeHelp = document.getElementById("start-code-help");
 
   // --- Game Constants ---
-  const GRID_SIZE = 16;
+  const GRID_SIZE = 15;
   let TILE_SIZE = 32; // Calculated dynamically
   const ESCAPE_TIME = 20; // Seconds until escape portal appears
   const CAT_BASE_SPEED = 6.0;
@@ -78,35 +78,35 @@ window.onload = function () {
       dir: { x: -1, y: 0 },
       color: "#ef4444",
       image: "avatar-face",
-      preferredSpawn: { x: 14, y: 1 },
+      preferredSpawn: { x: 13, y: 1 },
     }, // Dog close-up avatar
     {
       speed: 4.2,
       dir: { x: 1, y: 0 },
       color: "#8b5cf6",
       image: "avatar-dog",
-      preferredSpawn: { x: 1, y: 14 },
+      preferredSpawn: { x: 1, y: 13 },
     }, // Dog avatar
     {
       speed: 3.8,
       dir: { x: -1, y: 0 },
       color: "#06b6d4",
       image: "avatar-glasses",
-      preferredSpawn: { x: 14, y: 14 },
+      preferredSpawn: { x: 13, y: 13 },
     }, // Dog portrait avatar
     {
       speed: 4.1,
       dir: { x: 0, y: -1 },
       color: "#f97316",
       image: "avatar-smile",
-      preferredSpawn: { x: 7, y: 13 },
+      preferredSpawn: { x: 7, y: 12 },
     }, // Dog snout avatar
     {
       speed: 3.6,
       dir: { x: 1, y: 0 },
       color: "#22c55e",
       image: "avatar-collie",
-      preferredSpawn: { x: 8, y: 1 },
+      preferredSpawn: { x: 7, y: 1 },
     }, // Collie avatar
   ];
   let avatars = [];
