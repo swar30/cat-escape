@@ -702,7 +702,22 @@
           return move;
         }
 
+        function getRightTurnMove(avatar) {
+          if (!avatar.dir) return null;
+
+          const rightDir = { x: -avatar.dir.y, y: avatar.dir.x };
+          const rightX = avatar.x + rightDir.x;
+          const rightY = avatar.y + rightDir.y;
+          if (!canMove(rightX, rightY)) return null;
+
+          avatar.dir = rightDir;
+          return { x: rightX, y: rightY };
+        }
+
         function getNextRandomAvatarMove(avatar) {
+          const rightTurn = getRightTurnMove(avatar);
+          if (rightTurn) return rightTurn;
+
           if (avatar.dir) {
             const nextX = avatar.x + avatar.dir.x;
             const nextY = avatar.y + avatar.dir.y;

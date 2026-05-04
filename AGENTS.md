@@ -29,7 +29,7 @@ Current rules:
 - `1` means wall and `0` means floor.
 - The cat starts at tile `(1, 1)`.
 - Five avatars start around the maze and wander independently. Each avatar uses a local dog face/head sprite with a colored circular outline.
-- Avatars keep moving in their current direction until they hit a wall, then pick a random open direction that does not immediately backtrack unless they are at a dead end.
+- Avatars always take an open right turn when one is available. Otherwise they keep moving in their current direction until they hit a wall, then pick a random open direction that does not immediately backtrack unless they are at a dead end.
 - After 20 seconds, an emerald portal spawns on a random empty tile.
 - Touching the portal after it appears wins the game.
 - Touching an avatar loses the game.
