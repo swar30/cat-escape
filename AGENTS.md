@@ -74,6 +74,7 @@ Developer/debug controls currently present in the game:
 - For user-provided photos, crop to the face/head, remove the background when possible, and keep the result readable at small tile size.
 - After every visible game modification, show the game in the browser. Use the regular `index.html` path so the actual playable flow is tested.
 - After completing each task, commit the finished changes to Git with a concise message that describes the work.
+- Publishing is done by pushing committed changes with `git push`; do not create local publish zip archives or reintroduce a publishing skill/folder.
 - If the game grows beyond one file, split by responsibility: rendering, map data, entities, input, and game state.
 - Avoid removing the current debug controls unless replacing them with clearer development tools.
 
