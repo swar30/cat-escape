@@ -35,6 +35,46 @@
       .dpad-btn:active {
         background-color: rgba(255, 255, 255, 0.3);
       }
+      .mobile-controls {
+        display: none;
+      }
+      @media (max-width: 767px) {
+        body {
+          justify-content: flex-start;
+          padding: 20px 16px;
+        }
+        #ui-layer {
+          position: static;
+          width: 100%;
+          padding: 0;
+        }
+        .mobile-controls {
+          display: flex;
+          gap: 12px;
+          padding-top: 12px;
+        }
+        .mobile-speed-btn {
+          width: clamp(48px, 13vw, 56px);
+          height: clamp(48px, 13vw, 56px);
+        }
+        .mobile-dpad {
+          width: clamp(168px, 52vw, 224px);
+          height: clamp(168px, 52vw, 224px);
+          gap: 10px;
+        }
+        canvas {
+          margin-top: 16px;
+        }
+      }
+      @media (max-width: 767px) and (max-height: 740px) {
+        body {
+          padding-top: 16px;
+          padding-bottom: 16px;
+        }
+        canvas {
+          margin-top: 12px;
+        }
+      }
     </style>
   </head>
   <body
@@ -68,21 +108,9 @@
         </div>
       </div>
 
-      <!-- Virtual D-PAD for Touch Screens -->
-      <div
-        class="md:hidden grid grid-cols-3 gap-2 p-4 pointer-events-auto opacity-70 w-64 h-64 mb-4"
-      >
-        <div></div>
-        <button class="dpad-btn" id="btn-up">↑</button>
-        <div></div>
-        <button class="dpad-btn" id="btn-left">←</button>
-        <button class="dpad-btn" id="btn-down">↓</button>
-        <button class="dpad-btn" id="btn-right">→</button>
-      </div>
-
       <!-- Speed Controls -->
       <div
-        class="absolute bottom-1/2 right-4 transform translate-y-1/2 flex flex-col gap-3 pointer-events-auto opacity-80 z-20"
+        class="hidden md:flex absolute bottom-1/2 right-4 transform translate-y-1/2 flex-col gap-3 pointer-events-auto opacity-80 z-20"
       >
         <button
           id="btn-speed-up"
@@ -188,6 +216,36 @@
 
     <!-- Main Game Canvas -->
     <canvas id="gameCanvas"></canvas>
+
+    <!-- Mobile Controls -->
+    <div
+      class="mobile-controls md:hidden flex-col items-center pointer-events-auto opacity-80 z-20"
+    >
+      <div class="flex items-center justify-center gap-4">
+        <button
+          id="btn-speed-up-mobile"
+          class="mobile-speed-btn bg-slate-800 border-2 border-slate-500 rounded-full text-3xl font-bold text-emerald-400 shadow-lg flex items-center justify-center active:bg-slate-600 transition-colors"
+          title="Faster"
+        >
+          +
+        </button>
+        <button
+          id="btn-speed-down-mobile"
+          class="mobile-speed-btn bg-slate-800 border-2 border-slate-500 rounded-full text-3xl font-bold text-rose-400 shadow-lg flex items-center justify-center active:bg-slate-600 transition-colors"
+          title="Slower"
+        >
+          -
+        </button>
+      </div>
+      <div class="mobile-dpad grid grid-cols-3">
+        <div></div>
+        <button class="dpad-btn" id="btn-up">↑</button>
+        <div></div>
+        <button class="dpad-btn" id="btn-left">←</button>
+        <button class="dpad-btn" id="btn-down">↓</button>
+        <button class="dpad-btn" id="btn-right">→</button>
+      </div>
+    </div>
 
     <script>
       window.onload = function () {
@@ -461,9 +519,10 @@
         // --- Resize Handling ---
         function resizeCanvas() {
           const isMobile = window.innerWidth < 768;
-          // Leave room for UI
+          // Leave room for the mobile HUD and controls in normal page flow.
+          const mobileReserve = window.innerHeight < 740 ? 360 : 380;
           const availableHeight = isMobile
-            ? window.innerHeight - 280
+            ? window.innerHeight - mobileReserve
             : window.innerHeight - 100;
           const availableWidth = window.innerWidth - 40;
 
@@ -565,16 +624,22 @@
         bindTouch("btn-right", 1, 0);
 
         // --- Speed Control Buttons ---
-        document
-          .getElementById("btn-speed-up")
-          .addEventListener("click", () => {
-            cat.speed += 1.0;
+        const speedUp = () => {
+          cat.speed += 1.0;
+        };
+        const speedDown = () => {
+          cat.speed = Math.max(1.0, cat.speed - 1.0);
+        };
+        ["btn-speed-up", "btn-speed-up-mobile"].forEach((id) => {
+          document.getElementById(id).addEventListener("click", () => {
+            speedUp();
           });
-        document
-          .getElementById("btn-speed-down")
-          .addEventListener("click", () => {
-            cat.speed = Math.max(1.0, cat.speed - 1.0);
+        });
+        ["btn-speed-down", "btn-speed-down-mobile"].forEach((id) => {
+          document.getElementById(id).addEventListener("click", () => {
+            speedDown();
           });
+        });
 
         // --- UI Buttons ---
         function updateStartCodeHelp() {
