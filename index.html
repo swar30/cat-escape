@@ -588,8 +588,11 @@
           ) {
             e.preventDefault();
             spaceSpeedBoostActive = true;
-          } else if (e.code === "Space" && gameState === "GAMEOVER") {
-            // Press Space to restart after Game Over
+          } else if (
+            (e.code === "Space" || e.code === "Enter") &&
+            gameState === "GAMEOVER"
+          ) {
+            // Press Space or Enter to restart after Game Over
             btnRestart.click();
           }
         });
