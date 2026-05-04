@@ -725,7 +725,39 @@
           return { x: rightX, y: rightY };
         }
 
+        function getLineOfSightMove(avatar) {
+          let chaseDir = null;
+
+          if (avatar.x === cat.x) {
+            chaseDir = { x: 0, y: Math.sign(cat.y - avatar.y) };
+          } else if (avatar.y === cat.y) {
+            chaseDir = { x: Math.sign(cat.x - avatar.x), y: 0 };
+          }
+
+          if (!chaseDir || (chaseDir.x === 0 && chaseDir.y === 0)) {
+            return null;
+          }
+
+          let checkX = avatar.x + chaseDir.x;
+          let checkY = avatar.y + chaseDir.y;
+          while (checkX !== cat.x || checkY !== cat.y) {
+            if (!canMove(checkX, checkY)) return null;
+            checkX += chaseDir.x;
+            checkY += chaseDir.y;
+          }
+
+          const nextX = avatar.x + chaseDir.x;
+          const nextY = avatar.y + chaseDir.y;
+          if (!canMove(nextX, nextY)) return null;
+
+          avatar.dir = chaseDir;
+          return { x: nextX, y: nextY };
+        }
+
         function getNextRandomAvatarMove(avatar) {
+          const lineOfSightMove = getLineOfSightMove(avatar);
+          if (lineOfSightMove) return lineOfSightMove;
+
           const rightTurn = getRightTurnMove(avatar);
           if (rightTurn) return rightTurn;
 
