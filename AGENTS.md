@@ -21,15 +21,15 @@ The current game is playable directly in a browser by opening `index.html`. It d
 
 ## Current Game Design
 
-The player controls the cat inside a 16x16 tile maze. Five dog avatar enemies chase the cat through the maze. The goal is to survive for 20 seconds, then reach the randomly spawned escape portal.
+The player controls the cat inside a 16x16 tile maze. Five dog avatar enemies wander through the maze. The goal is to survive for 20 seconds, then reach the randomly spawned escape portal.
 
 Current rules:
 
 - The map is a fixed 16x16 grid.
 - `1` means wall and `0` means floor.
 - The cat starts at tile `(1, 1)`.
-- Five avatars start around the maze and chase the cat. Each avatar uses a local dog face/head sprite with a colored circular outline.
-- Avatars use breadth-first search pathfinding toward the cat's target tile.
+- Five avatars start around the maze and wander independently. Each avatar uses a local dog face/head sprite with a colored circular outline.
+- Avatars keep moving in their current direction until they hit a wall, then pick a random open direction.
 - After 20 seconds, an emerald portal spawns on a random empty tile.
 - Touching the portal after it appears wins the game.
 - Touching an avatar loses the game.
@@ -47,7 +47,6 @@ Current rules:
 
 Developer/debug controls currently present in the game:
 
-- Press `0` to toggle avatars from chasing to fleeing.
 - Left-click the canvas while playing to toggle cat wall pass-through mode.
 
 ## Implementation Notes
@@ -82,6 +81,6 @@ Developer/debug controls currently present in the game:
 
 - Add levels by swapping different 16x16 maps.
 - Add collectibles before the escape portal opens.
-- Add visible indicators for debug modes such as wall pass-through and avatar fleeing.
+- Add visible indicators for debug modes such as wall pass-through.
 - Add difficulty settings that change avatar count, avatar speed, portal timing, or map layout.
 - Replace CDN Tailwind with local CSS if offline play becomes important.

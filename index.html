@@ -267,6 +267,12 @@
         const ESCAPE_TIME = 20; // Seconds until escape portal appears
         const CAT_BASE_SPEED = 8.0;
         const SPACE_SPEED_MULTIPLIER = 6;
+        const AVATAR_DIRECTIONS = [
+          { x: 0, y: -1 },
+          { x: 1, y: 0 },
+          { x: 0, y: 1 },
+          { x: -1, y: 0 },
+        ];
 
         // 16x16 Map Design (1 = Wall, 0 = Floor)
         const mapTemplate = [
@@ -295,7 +301,6 @@
         let map = mapTemplate.map((row) => [...row]); // Pre-populate so background draws
         let escapePortal = null; // {x, y}
         let loopStarted = false; // Prevent multiple game loops
-        let avatarsFleeing = false; // Toggle for '0' key
         let passThroughWalls = false; // Toggle for left mouse click
         let spaceWallPassEnabled = false; // Enabled by start code 1121
         let spaceSpeedBoostEnabled = false; // Enabled by start code 6767
@@ -334,6 +339,7 @@
             isMoving: false,
             progress: 0,
             speed: 4.0,
+            dir: { x: -1, y: 0 },
             color: "#ef4444",
             image: "avatar-face",
           }, // Dog close-up avatar
@@ -345,6 +351,7 @@
             isMoving: false,
             progress: 0,
             speed: 4.2,
+            dir: { x: 1, y: 0 },
             color: "#8b5cf6",
             image: "avatar-dog",
           }, // Dog avatar
@@ -356,6 +363,7 @@
             isMoving: false,
             progress: 0,
             speed: 3.8,
+            dir: { x: -1, y: 0 },
             color: "#06b6d4",
             image: "avatar-glasses",
           }, // Dog portrait avatar
@@ -367,6 +375,7 @@
             isMoving: false,
             progress: 0,
             speed: 4.1,
+            dir: { x: 0, y: -1 },
             color: "#f97316",
             image: "avatar-smile",
           }, // Dog snout avatar
@@ -378,6 +387,7 @@
             isMoving: false,
             progress: 0,
             speed: 3.6,
+            dir: { x: 1, y: 0 },
             color: "#22c55e",
             image: "avatar-collie",
           }, // Collie avatar
@@ -416,7 +426,6 @@
           objectiveDisplay.textContent = `SURVIVE ${ESCAPE_TIME}s TO ESCAPE`;
           objectiveDisplay.className =
             "text-sm font-bold text-amber-400 animate-pulse";
-          avatarsFleeing = false;
           passThroughWalls = false;
           spaceWallPassEnabled = startCodeInput.value.trim() === "1121";
           spaceSpeedBoostEnabled = startCodeInput.value.trim() === "6767";
@@ -435,7 +444,7 @@
           };
           nextDir = { x: 0, y: 0 };
 
-          // Reset Avatars (Chasers)
+          // Reset Avatars
           // Spawn at corners with slight speed variations to prevent exact stacking
           avatars = [
             {
@@ -446,6 +455,7 @@
               isMoving: false,
               progress: 0,
               speed: 4.0,
+              dir: { x: -1, y: 0 },
               color: "#ef4444",
               image: "avatar-face",
             }, // Dog close-up avatar
@@ -457,6 +467,7 @@
               isMoving: false,
               progress: 0,
               speed: 4.2,
+              dir: { x: 1, y: 0 },
               color: "#8b5cf6",
               image: "avatar-dog",
             }, // Dog avatar
@@ -468,6 +479,7 @@
               isMoving: false,
               progress: 0,
               speed: 3.8,
+              dir: { x: -1, y: 0 },
               color: "#06b6d4",
               image: "avatar-glasses",
             }, // Dog portrait avatar
@@ -479,6 +491,7 @@
               isMoving: false,
               progress: 0,
               speed: 4.1,
+              dir: { x: 0, y: -1 },
               color: "#f97316",
               image: "avatar-smile",
             }, // Dog snout avatar
@@ -490,10 +503,12 @@
               isMoving: false,
               progress: 0,
               speed: 3.6,
+              dir: { x: 1, y: 0 },
               color: "#22c55e",
               image: "avatar-collie",
             }, // Collie avatar
           ];
+          avatars.forEach(pickRandomAvatarDirection);
 
           gameState = "PLAYING";
           startScreen.classList.add("hidden");
@@ -554,11 +569,6 @@
             cat.speed += 1.0;
           } else if (e.key === "-" || e.key === "_") {
             cat.speed = Math.max(1.0, cat.speed - 1.0); // Prevent negative/zero speed
-          }
-
-          // Toggle avatars fleeing behavior
-          if (e.key === "0") {
-            avatarsFleeing = !avatarsFleeing;
           }
 
           if (
@@ -657,92 +667,40 @@
         btnRestart.addEventListener("click", initGame);
         btnPlayAgain.addEventListener("click", initGame);
 
-        // --- Pathfinding (BFS) ---
-        function getNextMoveTowardsPlayer(startX, startY, targetX, targetY) {
-          if (startX === targetX && startY === targetY) return null;
-
-          let queue = [{ x: startX, y: startY, path: [] }];
-          let visited = new Set();
-          visited.add(`${startX},${startY}`);
-
-          const dirs = [
-            { x: 0, y: -1 },
-            { x: 1, y: 0 },
-            { x: 0, y: 1 },
-            { x: -1, y: 0 },
-          ];
-
-          while (queue.length > 0) {
-            let curr = queue.shift();
-
-            // If we reached target, return the FIRST step taken to get there
-            if (curr.x === targetX && curr.y === targetY) {
-              return curr.path.length > 0 ? curr.path[0] : null;
-            }
-
-            for (let d of dirs) {
-              let nx = curr.x + d.x;
-              let ny = curr.y + d.y;
-
-              // Check bounds and walls
-              if (
-                nx >= 0 &&
-                nx < GRID_SIZE &&
-                ny >= 0 &&
-                ny < GRID_SIZE &&
-                map[ny][nx] === 0
-              ) {
-                let key = `${nx},${ny}`;
-                if (!visited.has(key)) {
-                  visited.add(key);
-                  queue.push({
-                    x: nx,
-                    y: ny,
-                    path: [...curr.path, { x: nx, y: ny, dx: d.x, dy: d.y }],
-                  });
-                }
-              }
-            }
-          }
-          return null; // No path found
-        }
-
-        function getNextMoveAwayFromPlayer(startX, startY, targetX, targetY) {
-          const dirs = [
-            { x: 0, y: -1 },
-            { x: 1, y: 0 },
-            { x: 0, y: 1 },
-            { x: -1, y: 0 },
-          ];
-          let bestMove = null;
-          let maxDist = -1;
-
-          for (let d of dirs) {
-            let nx = startX + d.x;
-            let ny = startY + d.y;
-            if (
-              nx >= 0 &&
-              nx < GRID_SIZE &&
-              ny >= 0 &&
-              ny < GRID_SIZE &&
-              map[ny][nx] === 0
-            ) {
-              let distSq =
-                Math.pow(nx - targetX, 2) + Math.pow(ny - targetY, 2);
-              if (distSq > maxDist) {
-                maxDist = distSq;
-                bestMove = { x: nx, y: ny };
-              }
-            }
-          }
-          return bestMove;
-        }
-
         // --- Game Logic ---
         function canMove(x, y, ignoreWalls = false) {
           if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) return false;
           if (ignoreWalls) return true;
           return map[y][x] === 0;
+        }
+
+        function getOpenAvatarMoves(avatar) {
+          return AVATAR_DIRECTIONS.map((dir) => ({
+            x: avatar.x + dir.x,
+            y: avatar.y + dir.y,
+            dir,
+          })).filter((move) => canMove(move.x, move.y));
+        }
+
+        function pickRandomAvatarDirection(avatar) {
+          const moves = getOpenAvatarMoves(avatar);
+          if (moves.length === 0) return null;
+
+          const move = moves[Math.floor(Math.random() * moves.length)];
+          avatar.dir = { ...move.dir };
+          return move;
+        }
+
+        function getNextRandomAvatarMove(avatar) {
+          if (avatar.dir) {
+            const nextX = avatar.x + avatar.dir.x;
+            const nextY = avatar.y + avatar.dir.y;
+            if (canMove(nextX, nextY)) {
+              return { x: nextX, y: nextY };
+            }
+          }
+
+          return pickRandomAvatarDirection(avatar);
         }
 
         function spawnEscapePortal() {
@@ -822,35 +780,10 @@
             }
           }
 
-          // 2. Update Avatars (Chasers)
+          // 2. Update Avatars
           for (let avatar of avatars) {
             if (!avatar.isMoving) {
-              let step = null;
-              if (avatarsFleeing) {
-                step = getNextMoveAwayFromPlayer(
-                  avatar.x,
-                  avatar.y,
-                  cat.targetX,
-                  cat.targetY,
-                );
-              } else {
-                // Calculate next step towards the cat's TARGET position for smarter cutoff
-                step = getNextMoveTowardsPlayer(
-                  avatar.x,
-                  avatar.y,
-                  cat.targetX,
-                  cat.targetY,
-                );
-
-                // Fallback: target cat's current position if target is unreachable
-                if (!step)
-                  step = getNextMoveTowardsPlayer(
-                    avatar.x,
-                    avatar.y,
-                    cat.x,
-                    cat.y,
-                  );
-              }
+              let step = getNextRandomAvatarMove(avatar);
 
               if (step && canMove(step.x, step.y)) {
                 avatar.targetX = step.x;
