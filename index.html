@@ -221,26 +221,22 @@
     <div
       class="mobile-controls md:hidden flex-col items-center pointer-events-auto opacity-80 z-20"
     >
-      <div class="flex items-center justify-center gap-4">
+      <div class="mobile-dpad grid grid-cols-3">
         <button
           id="btn-speed-up-mobile"
-          class="mobile-speed-btn bg-slate-800 border-2 border-slate-500 rounded-full text-3xl font-bold text-emerald-400 shadow-lg flex items-center justify-center active:bg-slate-600 transition-colors"
+          class="mobile-speed-btn self-center justify-self-center bg-slate-800 border-2 border-slate-500 rounded-full text-3xl font-bold text-emerald-400 shadow-lg flex items-center justify-center active:bg-slate-600 transition-colors"
           title="Faster"
         >
           +
         </button>
+        <button class="dpad-btn" id="btn-up">↑</button>
         <button
           id="btn-speed-down-mobile"
-          class="mobile-speed-btn bg-slate-800 border-2 border-slate-500 rounded-full text-3xl font-bold text-rose-400 shadow-lg flex items-center justify-center active:bg-slate-600 transition-colors"
+          class="mobile-speed-btn self-center justify-self-center bg-slate-800 border-2 border-slate-500 rounded-full text-3xl font-bold text-rose-400 shadow-lg flex items-center justify-center active:bg-slate-600 transition-colors"
           title="Slower"
         >
           -
         </button>
-      </div>
-      <div class="mobile-dpad grid grid-cols-3">
-        <div></div>
-        <button class="dpad-btn" id="btn-up">↑</button>
-        <div></div>
         <button class="dpad-btn" id="btn-left">←</button>
         <button class="dpad-btn" id="btn-down">↓</button>
         <button class="dpad-btn" id="btn-right">→</button>
