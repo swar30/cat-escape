@@ -210,7 +210,7 @@
         id="play-again-btn"
         class="bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all text-xl"
       >
-        PLAY AGAIN
+        NEXT LEVEL
       </button>
     </div>
 
@@ -274,31 +274,16 @@
           { x: -1, y: 0 },
         ];
 
-        // 16x16 Map Design (1 = Wall, 0 = Floor)
-        const mapTemplate = [
-          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-          [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-          [1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1],
-          [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-          [1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1],
-          [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-          [1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1],
-          [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-          [1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1],
-          [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-          [1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1],
-          [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-          [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1],
-          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        ];
+        const CAT_START = { x: 1, y: 1 };
+        const MIN_FLOOR_TILES = 118;
+        const TARGET_RANDOM_WALLS = 42;
+        const MAX_MAP_ATTEMPTS = 80;
 
         // --- Game State ---
         let gameState = "START"; // START, PLAYING, GAMEOVER, WIN
         let lastTime = 0;
         let timeElapsed = 0;
-        let map = mapTemplate.map((row) => [...row]); // Pre-populate so background draws
+        let map = generateRandomMap(); // Pre-populate so background draws
         let escapePortal = null; // {x, y}
         let loopStarted = false; // Prevent multiple game loops
         let passThroughWalls = false; // Toggle for left mouse click
@@ -330,68 +315,44 @@
           speed: CAT_BASE_SPEED,
           dir: { x: 0, y: 1 },
         };
-        let avatars = [
+        const avatarBlueprints = [
           {
-            x: 14,
-            y: 1,
-            targetX: 14,
-            targetY: 1,
-            isMoving: false,
-            progress: 0,
             speed: 4.0,
             dir: { x: -1, y: 0 },
             color: "#ef4444",
             image: "avatar-face",
+            preferredSpawn: { x: 14, y: 1 },
           }, // Dog close-up avatar
           {
-            x: 1,
-            y: 14,
-            targetX: 1,
-            targetY: 14,
-            isMoving: false,
-            progress: 0,
             speed: 4.2,
             dir: { x: 1, y: 0 },
             color: "#8b5cf6",
             image: "avatar-dog",
+            preferredSpawn: { x: 1, y: 14 },
           }, // Dog avatar
           {
-            x: 14,
-            y: 14,
-            targetX: 14,
-            targetY: 14,
-            isMoving: false,
-            progress: 0,
             speed: 3.8,
             dir: { x: -1, y: 0 },
             color: "#06b6d4",
             image: "avatar-glasses",
+            preferredSpawn: { x: 14, y: 14 },
           }, // Dog portrait avatar
           {
-            x: 7,
-            y: 13,
-            targetX: 7,
-            targetY: 13,
-            isMoving: false,
-            progress: 0,
             speed: 4.1,
             dir: { x: 0, y: -1 },
             color: "#f97316",
             image: "avatar-smile",
+            preferredSpawn: { x: 7, y: 13 },
           }, // Dog snout avatar
           {
-            x: 8,
-            y: 1,
-            targetX: 8,
-            targetY: 1,
-            isMoving: false,
-            progress: 0,
             speed: 3.6,
             dir: { x: 1, y: 0 },
             color: "#22c55e",
             image: "avatar-collie",
+            preferredSpawn: { x: 8, y: 1 },
           }, // Collie avatar
         ];
+        let avatars = [];
 
         const catImage = new Image();
         const avatarImages = {
@@ -415,10 +376,185 @@
         avatarImages["avatar-smile"].src = "avatar-smile.png";
         avatarImages["avatar-collie"].src = "avatar-collie.png";
 
+        // --- Map Generation ---
+        function createOpenMap() {
+          return Array.from({ length: GRID_SIZE }, (_, y) =>
+            Array.from({ length: GRID_SIZE }, (_, x) =>
+              x === 0 || x === GRID_SIZE - 1 || y === 0 || y === GRID_SIZE - 1
+                ? 1
+                : 0,
+            ),
+          );
+        }
+
+        function shuffle(items) {
+          const shuffled = [...items];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          return shuffled;
+        }
+
+        function isFloor(testMap, x, y) {
+          return (
+            x >= 0 &&
+            x < GRID_SIZE &&
+            y >= 0 &&
+            y < GRID_SIZE &&
+            testMap[y][x] === 0
+          );
+        }
+
+        function countOpenNeighborsInMap(testMap, x, y) {
+          return AVATAR_DIRECTIONS.filter((dir) =>
+            isFloor(testMap, x + dir.x, y + dir.y),
+          ).length;
+        }
+
+        function getFloorTiles(testMap) {
+          const floors = [];
+          for (let y = 1; y < GRID_SIZE - 1; y++) {
+            for (let x = 1; x < GRID_SIZE - 1; x++) {
+              if (testMap[y][x] === 0) floors.push({ x, y });
+            }
+          }
+          return floors;
+        }
+
+        function isConnectedMap(testMap) {
+          const floors = getFloorTiles(testMap);
+          if (floors.length < MIN_FLOOR_TILES) return false;
+
+          const seen = new Set();
+          const queue = [floors[0]];
+          seen.add(`${floors[0].x},${floors[0].y}`);
+
+          for (let i = 0; i < queue.length; i++) {
+            const tile = queue[i];
+            for (const dir of AVATAR_DIRECTIONS) {
+              const next = { x: tile.x + dir.x, y: tile.y + dir.y };
+              const key = `${next.x},${next.y}`;
+              if (!seen.has(key) && isFloor(testMap, next.x, next.y)) {
+                seen.add(key);
+                queue.push(next);
+              }
+            }
+          }
+
+          return seen.size === floors.length;
+        }
+
+        function hasNoDeadEnds(testMap) {
+          return getFloorTiles(testMap).every(
+            (tile) => countOpenNeighborsInMap(testMap, tile.x, tile.y) !== 1,
+          );
+        }
+
+        function isValidMap(testMap) {
+          return (
+            testMap[CAT_START.y][CAT_START.x] === 0 &&
+            isConnectedMap(testMap) &&
+            hasNoDeadEnds(testMap)
+          );
+        }
+
+        function generateRandomMap() {
+          let bestMap = createOpenMap();
+          let bestWallCount = 0;
+
+          for (let attempt = 0; attempt < MAX_MAP_ATTEMPTS; attempt++) {
+            const candidate = createOpenMap();
+            const wallCandidates = [];
+
+            for (let y = 1; y < GRID_SIZE - 1; y++) {
+              for (let x = 1; x < GRID_SIZE - 1; x++) {
+                const distanceFromCat =
+                  Math.abs(x - CAT_START.x) + Math.abs(y - CAT_START.y);
+                if (distanceFromCat > 2) {
+                  wallCandidates.push({ x, y });
+                }
+              }
+            }
+
+            let wallCount = 0;
+            for (const tile of shuffle(wallCandidates)) {
+              if (wallCount >= TARGET_RANDOM_WALLS) break;
+
+              candidate[tile.y][tile.x] = 1;
+              if (isValidMap(candidate)) {
+                wallCount++;
+              } else {
+                candidate[tile.y][tile.x] = 0;
+              }
+            }
+
+            if (wallCount > bestWallCount && isValidMap(candidate)) {
+              bestMap = candidate.map((row) => [...row]);
+              bestWallCount = wallCount;
+            }
+
+            if (bestWallCount >= TARGET_RANDOM_WALLS) break;
+          }
+
+          return bestMap;
+        }
+
+        function pickAvatarSpawn(preferredSpawn, usedSpawns) {
+          const available = getFloorTiles(map).filter((tile) => {
+            const key = `${tile.x},${tile.y}`;
+            const distanceFromCat =
+              Math.abs(tile.x - CAT_START.x) + Math.abs(tile.y - CAT_START.y);
+            return !usedSpawns.has(key) && distanceFromCat >= 6;
+          });
+
+          const spawnOptions =
+            available.length > 0
+              ? available
+              : getFloorTiles(map).filter(
+                  (tile) => !usedSpawns.has(`${tile.x},${tile.y}`),
+                );
+          spawnOptions.sort((a, b) => {
+            const distanceA =
+              Math.abs(a.x - preferredSpawn.x) +
+              Math.abs(a.y - preferredSpawn.y);
+            const distanceB =
+              Math.abs(b.x - preferredSpawn.x) +
+              Math.abs(b.y - preferredSpawn.y);
+            return distanceA - distanceB;
+          });
+
+          const topChoices = spawnOptions.slice(
+            0,
+            Math.min(4, spawnOptions.length),
+          );
+          const spawn = topChoices[Math.floor(Math.random() * topChoices.length)];
+          usedSpawns.add(`${spawn.x},${spawn.y}`);
+          return spawn;
+        }
+
+        function createAvatarsForMap() {
+          const usedSpawns = new Set([`${CAT_START.x},${CAT_START.y}`]);
+          return avatarBlueprints.map((blueprint) => {
+            const spawn = pickAvatarSpawn(blueprint.preferredSpawn, usedSpawns);
+            return {
+              x: spawn.x,
+              y: spawn.y,
+              targetX: spawn.x,
+              targetY: spawn.y,
+              isMoving: false,
+              progress: 0,
+              speed: blueprint.speed,
+              dir: { ...blueprint.dir },
+              color: blueprint.color,
+              image: blueprint.image,
+            };
+          });
+        }
+
         // --- Initialization ---
         function initGame() {
-          // Deep copy map
-          map = mapTemplate.map((row) => [...row]);
+          map = generateRandomMap();
 
           // Reset Time
           timeElapsed = 0;
@@ -433,10 +569,10 @@
 
           // Reset Cat
           cat = {
-            x: 1,
-            y: 1,
-            targetX: 1,
-            targetY: 1,
+            x: CAT_START.x,
+            y: CAT_START.y,
+            targetX: CAT_START.x,
+            targetY: CAT_START.y,
             isMoving: false,
             progress: 0,
             speed: CAT_BASE_SPEED,
@@ -445,69 +581,7 @@
           nextDir = { x: 0, y: 0 };
 
           // Reset Avatars
-          // Spawn at corners with slight speed variations to prevent exact stacking
-          avatars = [
-            {
-              x: 14,
-              y: 1,
-              targetX: 14,
-              targetY: 1,
-              isMoving: false,
-              progress: 0,
-              speed: 4.0,
-              dir: { x: -1, y: 0 },
-              color: "#ef4444",
-              image: "avatar-face",
-            }, // Dog close-up avatar
-            {
-              x: 1,
-              y: 14,
-              targetX: 1,
-              targetY: 14,
-              isMoving: false,
-              progress: 0,
-              speed: 4.2,
-              dir: { x: 1, y: 0 },
-              color: "#8b5cf6",
-              image: "avatar-dog",
-            }, // Dog avatar
-            {
-              x: 14,
-              y: 14,
-              targetX: 14,
-              targetY: 14,
-              isMoving: false,
-              progress: 0,
-              speed: 3.8,
-              dir: { x: -1, y: 0 },
-              color: "#06b6d4",
-              image: "avatar-glasses",
-            }, // Dog portrait avatar
-            {
-              x: 7,
-              y: 13,
-              targetX: 7,
-              targetY: 13,
-              isMoving: false,
-              progress: 0,
-              speed: 4.1,
-              dir: { x: 0, y: -1 },
-              color: "#f97316",
-              image: "avatar-smile",
-            }, // Dog snout avatar
-            {
-              x: 8,
-              y: 1,
-              targetX: 8,
-              targetY: 1,
-              isMoving: false,
-              progress: 0,
-              speed: 3.6,
-              dir: { x: 1, y: 0 },
-              color: "#22c55e",
-              image: "avatar-collie",
-            }, // Collie avatar
-          ];
+          avatars = createAvatarsForMap();
           avatars.forEach(pickRandomAvatarDirection);
 
           gameState = "PLAYING";

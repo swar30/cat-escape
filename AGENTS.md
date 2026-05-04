@@ -25,14 +25,16 @@ The player controls the cat inside a 16x16 tile maze. Five dog avatar enemies wa
 
 Current rules:
 
-- The map is a fixed 16x16 grid.
+- The map is a randomly generated 16x16 grid.
 - `1` means wall and `0` means floor.
+- Generated maps keep every floor tile connected and avoid dead-end floor tiles.
 - The cat starts at tile `(1, 1)`.
 - Five avatars start around the maze and wander independently. Each avatar uses a local dog face/head sprite with a colored circular outline.
 - Avatars chase the cat while they have direct line of sight in the same row or column with no wall between them. Without line of sight, avatars take an open right turn only when it leads into a tunnel-like tile with at most two exits. Otherwise they keep moving in their current direction until they hit a wall, then pick a random open direction that does not immediately backtrack unless they are at a dead end.
 - After 20 seconds, an emerald portal spawns on a random empty tile.
 - Touching the portal after it appears wins the game.
 - Touching an avatar loses the game.
+- Starting, retrying, or playing again generates a fresh map.
 
 ## Controls
 
@@ -55,6 +57,7 @@ Developer/debug controls currently present in the game:
 - The canvas uses pixelated rendering for a retro tile look.
 - Tailwind is loaded from `https://cdn.tailwindcss.com`, so styling depends on internet access unless this is changed later.
 - Game state is kept inside `window.onload` in `index.html`.
+- Map generation starts from an open bordered grid, adds randomized interior walls, and rejects layouts that disconnect the floor or create dead ends.
 - The game loop uses `requestAnimationFrame`.
 - Movement is grid-based but animated between tiles with per-entity `progress`.
 - Collision checks use interpolated tile positions so moving entities can collide during transitions.
