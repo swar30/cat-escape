@@ -683,8 +683,19 @@
         }
 
         function pickRandomAvatarDirection(avatar) {
-          const moves = getOpenAvatarMoves(avatar);
+          let moves = getOpenAvatarMoves(avatar);
           if (moves.length === 0) return null;
+
+          if (avatar.dir && moves.length > 1) {
+            const reverseX = -avatar.dir.x;
+            const reverseY = -avatar.dir.y;
+            const forwardMoves = moves.filter(
+              (move) => move.dir.x !== reverseX || move.dir.y !== reverseY,
+            );
+            if (forwardMoves.length > 0) {
+              moves = forwardMoves;
+            }
+          }
 
           const move = moves[Math.floor(Math.random() * moves.length)];
           avatar.dir = { ...move.dir };
