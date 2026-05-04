@@ -11,6 +11,7 @@ The current game is playable directly in a browser by opening `index.html`. It d
 - `index.html` - HTML shell for the game UI, canvas, modals, and controls.
 - `styles.css` - Local CSS for body, canvas, and mobile controls.
 - `game.js` - Game implementation: canvas drawing, input handling, game loop, map, AI movement, collision, win/loss screens.
+- `levels.js` - Static data for the 20 pre-generated 16x16 level maps.
 - `cat.png` - Cat player sprite, currently `100 x 105` PNG.
 - `avatar-face.png` - Close-up dog enemy sprite with transparent corners.
 - `avatar-dog.png` - Smiling dog enemy sprite with transparent corners.
@@ -23,20 +24,21 @@ The current game is playable directly in a browser by opening `index.html`. It d
 
 ## Current Game Design
 
-The player controls the cat inside a 16x16 tile maze. Five dog avatar enemies wander through the maze. The goal is to survive for 20 seconds, then reach the randomly spawned escape portal.
+The player controls the cat inside a 16x16 tile maze. Five dog avatar enemies wander through the maze. The goal is to survive for 20 seconds, then reach the randomly spawned escape portal. The game has 20 pre-generated levels, and each win advances to the next level.
 
 Current rules:
 
-- The map is a randomly generated 16x16 grid.
+- Each level map is a pre-generated 16x16 grid stored in `levels.js`.
 - `1` means wall and `0` means floor.
-- Generated maps keep every floor tile connected, avoid dead-end floor tiles, and avoid 2x2 open floor blocks so the map stays tunnel-like.
+- The level maps keep every floor tile connected, avoid dead-end floor tiles, and avoid 2x2 open floor blocks so the map stays tunnel-like.
 - The cat starts at tile `(1, 1)`.
 - Five avatars start around the maze and wander independently. Each avatar uses a local dog face/head sprite with a colored circular outline.
 - Avatars chase the cat while they have direct line of sight in the same row or column with no wall between them. Without line of sight, avatars take an open right turn only when it leads into a tunnel-like tile with at most two exits. Otherwise they keep moving in their current direction until they hit a wall, then pick a random open direction that does not immediately backtrack unless they are at a dead end.
 - After 20 seconds, an emerald portal spawns on a random empty tile.
 - Touching the portal after it appears wins the game.
+- Winning a level advances to the next map. Winning level 20 resets the next run back to level 1.
 - Touching an avatar loses the game.
-- Starting, retrying, or playing again generates a fresh map.
+- Starting begins at level 1. Retrying after being caught restarts the current level.
 
 ## Controls
 
@@ -58,8 +60,8 @@ Developer/debug controls currently present in the game:
 - Rendering is done with the 2D canvas API.
 - The canvas uses pixelated rendering for a retro tile look.
 - Tailwind is loaded from `https://cdn.tailwindcss.com`, so styling depends on internet access unless this is changed later.
-- Game state is kept inside `window.onload` in `index.html`.
-- Map generation starts from a solid bordered grid, carves one-tile-wide tunnels, then braids dead ends only when the opening does not create a 2x2 open floor block.
+- Game state is kept inside `window.onload` in `game.js`.
+- Level data is loaded from `window.CAT_ESCAPE_LEVELS` in `levels.js`.
 - The game loop uses `requestAnimationFrame`.
 - Movement is grid-based but animated between tiles with per-entity `progress`.
 - Collision checks use interpolated tile positions so moving entities can collide during transitions.
@@ -76,7 +78,7 @@ Developer/debug controls currently present in the game:
 - If adding new mechanics, keep constants near the existing game constants and document any new controls in this file.
 - When adding more photo avatars, save each as a local project PNG, add it to `avatarImages`, and assign it to one avatar object with an `image` key.
 - For user-provided photos, crop to the face/head, remove the background when possible, and keep the result readable at small tile size.
-- After every visible game modification, show the game in the browser. Use the regular `index.html` path so the actual playable flow is tested.
+- After every visible game modification, show the game with the embedded Browser skill. Use the regular `index.html` file URL so the actual playable flow is tested.
 - After completing each task, commit the finished changes to Git with a concise message that describes the work.
 - Publishing is done by pushing committed changes with `git push`; do not create local publish zip archives or reintroduce a publishing skill/folder.
 - If the game grows beyond one file, split by responsibility: rendering, map data, entities, input, and game state.

@@ -7,11 +7,13 @@ window.onload = function () {
   const gameOverScreen = document.getElementById("game-over-screen");
   const winScreen = document.getElementById("win-screen");
   const timerDisplay = document.getElementById("timer-display");
+  const levelDisplay = document.getElementById("level-display");
   const objectiveDisplay = document.getElementById("objective-display");
 
   const btnStart = document.getElementById("start-btn");
   const btnRestart = document.getElementById("restart-btn");
   const btnPlayAgain = document.getElementById("play-again-btn");
+  const winMessage = document.getElementById("win-message");
   const startCodeInput = document.getElementById("start-code-input");
   const startCodeHelp = document.getElementById("start-code-help");
 
@@ -29,14 +31,16 @@ window.onload = function () {
   ];
 
   const CAT_START = { x: 1, y: 1 };
-  const MIN_FLOOR_TILES = 75;
-  const MAX_MAP_ATTEMPTS = 80;
+  const LEVELS = window.CAT_ESCAPE_LEVELS || [];
+  const TOTAL_LEVELS = LEVELS.length;
 
   // --- Game State ---
   let gameState = "START"; // START, PLAYING, GAMEOVER, WIN
   let lastTime = 0;
   let timeElapsed = 0;
-  let map = generateRandomMap(); // Pre-populate so background draws
+  let currentLevelIndex = 0;
+  let finishedAllLevels = false;
+  let map = getLevelMap(currentLevelIndex); // Pre-populate so background draws
   let escapePortal = null; // {x, y}
   let loopStarted = false; // Prevent multiple game loops
   let passThroughWalls = false; // Toggle for left mouse click
@@ -129,15 +133,11 @@ window.onload = function () {
   avatarImages["avatar-smile"].src = "avatar-smile.png";
   avatarImages["avatar-collie"].src = "avatar-collie.png";
 
-  // --- Map Generation ---
-  function createSolidMap() {
-    return Array.from({ length: GRID_SIZE }, (_, y) =>
+  // --- Level Data ---
+  function createFallbackTunnelMap() {
+    const fallback = Array.from({ length: GRID_SIZE }, () =>
       Array.from({ length: GRID_SIZE }, () => 1),
     );
-  }
-
-  function createFallbackTunnelMap() {
-    const fallback = createSolidMap();
     for (let x = 1; x < GRID_SIZE - 1; x++) {
       fallback[1][x] = 0;
       fallback[GRID_SIZE - 2][x] = 0;
@@ -149,29 +149,13 @@ window.onload = function () {
     return fallback;
   }
 
-  function shuffle(items) {
-    const shuffled = [...items];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  }
+  function getLevelMap(levelIndex) {
+    const levelRows = LEVELS[levelIndex];
+    if (!levelRows) return createFallbackTunnelMap();
 
-  function isFloor(testMap, x, y) {
-    return (
-      x >= 0 &&
-      x < GRID_SIZE &&
-      y >= 0 &&
-      y < GRID_SIZE &&
-      testMap[y][x] === 0
+    return levelRows.map((row) =>
+      row.split("").map((tile) => (tile === "0" ? 0 : 1)),
     );
-  }
-
-  function countOpenNeighborsInMap(testMap, x, y) {
-    return AVATAR_DIRECTIONS.filter((dir) =>
-      isFloor(testMap, x + dir.x, y + dir.y),
-    ).length;
   }
 
   function getFloorTiles(testMap) {
@@ -184,166 +168,9 @@ window.onload = function () {
     return floors;
   }
 
-  function isConnectedMap(testMap) {
-    const floors = getFloorTiles(testMap);
-    if (floors.length < MIN_FLOOR_TILES) return false;
-
-    const seen = new Set();
-    const queue = [floors[0]];
-    seen.add(`${floors[0].x},${floors[0].y}`);
-
-    for (let i = 0; i < queue.length; i++) {
-      const tile = queue[i];
-      for (const dir of AVATAR_DIRECTIONS) {
-        const next = { x: tile.x + dir.x, y: tile.y + dir.y };
-        const key = `${next.x},${next.y}`;
-        if (!seen.has(key) && isFloor(testMap, next.x, next.y)) {
-          seen.add(key);
-          queue.push(next);
-        }
-      }
-    }
-
-    return seen.size === floors.length;
-  }
-
-  function hasNoDeadEnds(testMap) {
-    return getFloorTiles(testMap).every(
-      (tile) => countOpenNeighborsInMap(testMap, tile.x, tile.y) !== 1,
-    );
-  }
-
-  function hasNoOpenFloorBlocks(testMap) {
-    for (let y = 1; y < GRID_SIZE - 2; y++) {
-      for (let x = 1; x < GRID_SIZE - 2; x++) {
-        if (
-          testMap[y][x] === 0 &&
-          testMap[y][x + 1] === 0 &&
-          testMap[y + 1][x] === 0 &&
-          testMap[y + 1][x + 1] === 0
-        ) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  function isValidMap(testMap) {
-    return (
-      testMap[CAT_START.y][CAT_START.x] === 0 &&
-      isConnectedMap(testMap) &&
-      hasNoDeadEnds(testMap) &&
-      hasNoOpenFloorBlocks(testMap)
-    );
-  }
-
-  function getDeadEndTiles(testMap) {
-    return getFloorTiles(testMap).filter(
-      (tile) => countOpenNeighborsInMap(testMap, tile.x, tile.y) === 1,
-    );
-  }
-
-  function carveMazeMap() {
-    const candidate = createSolidMap();
-    const visited = new Set();
-    const stack = [{ ...CAT_START }];
-
-    candidate[CAT_START.y][CAT_START.x] = 0;
-    visited.add(`${CAT_START.x},${CAT_START.y}`);
-
-    while (stack.length > 0) {
-      const current = stack[stack.length - 1];
-      const neighbors = shuffle(AVATAR_DIRECTIONS)
-        .map((dir) => ({
-          x: current.x + dir.x * 2,
-          y: current.y + dir.y * 2,
-          wallX: current.x + dir.x,
-          wallY: current.y + dir.y,
-        }))
-        .filter(
-          (tile) =>
-            tile.x > 0 &&
-            tile.x < GRID_SIZE - 1 &&
-            tile.y > 0 &&
-            tile.y < GRID_SIZE - 1 &&
-            !visited.has(`${tile.x},${tile.y}`),
-        );
-
-      if (neighbors.length === 0) {
-        stack.pop();
-        continue;
-      }
-
-      const next = neighbors[0];
-      candidate[next.wallY][next.wallX] = 0;
-      candidate[next.y][next.x] = 0;
-      visited.add(`${next.x},${next.y}`);
-      stack.push({ x: next.x, y: next.y });
-    }
-
-    return candidate;
-  }
-
-  function braidDeadEnds(testMap) {
-    let changed = true;
-    let guard = 0;
-
-    while (changed && guard < 200) {
-      changed = false;
-      guard++;
-
-      for (const tile of shuffle(getDeadEndTiles(testMap))) {
-        const candidates = shuffle(AVATAR_DIRECTIONS)
-          .map((dir) => ({
-            wallX: tile.x + dir.x,
-            wallY: tile.y + dir.y,
-            targetX: tile.x + dir.x * 2,
-            targetY: tile.y + dir.y * 2,
-          }))
-          .filter(
-            (opening) =>
-              opening.targetX > 0 &&
-              opening.targetX < GRID_SIZE - 1 &&
-              opening.targetY > 0 &&
-              opening.targetY < GRID_SIZE - 1 &&
-              testMap[opening.wallY][opening.wallX] === 1 &&
-              testMap[opening.targetY][opening.targetX] === 0,
-          );
-
-        for (const opening of candidates) {
-          testMap[opening.wallY][opening.wallX] = 0;
-
-          if (
-            hasNoOpenFloorBlocks(testMap) &&
-            countOpenNeighborsInMap(testMap, tile.x, tile.y) > 1
-          ) {
-            changed = true;
-            break;
-          }
-
-          testMap[opening.wallY][opening.wallX] = 1;
-        }
-      }
-    }
-
-    return testMap;
-  }
-
-  function generateRandomMap() {
-    let fallbackMap = null;
-
-    for (let attempt = 0; attempt < MAX_MAP_ATTEMPTS; attempt++) {
-      const candidate = braidDeadEnds(carveMazeMap());
-      if (!fallbackMap && hasNoOpenFloorBlocks(candidate)) {
-        fallbackMap = candidate.map((row) => [...row]);
-      }
-      if (isValidMap(candidate)) {
-        return candidate;
-      }
-    }
-
-    return fallbackMap || createFallbackTunnelMap();
+  function updateLevelDisplay() {
+    const currentLevel = Math.min(currentLevelIndex + 1, TOTAL_LEVELS || 1);
+    levelDisplay.textContent = `${currentLevel}/${TOTAL_LEVELS || 1}`;
   }
 
   function pickAvatarSpawn(preferredSpawn, usedSpawns) {
@@ -399,8 +226,14 @@ window.onload = function () {
   }
 
   // --- Initialization ---
-  function initGame() {
-    map = generateRandomMap();
+  function initGame(options = {}) {
+    if (options.resetToFirstLevel) {
+      currentLevelIndex = 0;
+      finishedAllLevels = false;
+    }
+
+    map = getLevelMap(currentLevelIndex);
+    updateLevelDisplay();
 
     // Reset Time
     timeElapsed = 0;
@@ -446,6 +279,8 @@ window.onload = function () {
       requestAnimationFrame(gameLoop);
     }
   }
+
+  updateLevelDisplay();
 
   // --- Resize Handling ---
   function resizeCanvas() {
@@ -587,10 +422,12 @@ window.onload = function () {
       updateStartCodeHelp();
       return;
     }
-    initGame();
+    initGame({ resetToFirstLevel: true });
   });
   btnRestart.addEventListener("click", initGame);
-  btnPlayAgain.addEventListener("click", initGame);
+  btnPlayAgain.addEventListener("click", () => {
+    initGame({ resetToFirstLevel: finishedAllLevels });
+  });
 
   // --- Game Logic ---
   function canMove(x, y, ignoreWalls = false) {
@@ -717,6 +554,25 @@ window.onload = function () {
     }
   }
 
+  function showWinScreen() {
+    const completedLevel = currentLevelIndex + 1;
+    finishedAllLevels = currentLevelIndex >= TOTAL_LEVELS - 1;
+
+    if (finishedAllLevels) {
+      winMessage.textContent = `You cleared all ${TOTAL_LEVELS} levels.`;
+      btnPlayAgain.textContent = "PLAY AGAIN";
+    } else {
+      currentLevelIndex++;
+      updateLevelDisplay();
+      winMessage.textContent = `Level ${completedLevel} complete.`;
+      btnPlayAgain.textContent = "NEXT LEVEL";
+    }
+
+    gameState = "WIN";
+    winScreen.classList.remove("hidden");
+    winScreen.style.display = "flex";
+  }
+
   function update(dt) {
     if (gameState !== "PLAYING") return;
 
@@ -766,9 +622,7 @@ window.onload = function () {
           cat.x === escapePortal.x &&
           cat.y === escapePortal.y
         ) {
-          gameState = "WIN";
-          winScreen.classList.remove("hidden");
-          winScreen.style.display = "flex";
+          showWinScreen();
           return;
         }
       }

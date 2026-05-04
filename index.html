@@ -9,6 +9,7 @@
     <title>Cat 😺 Escape</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="styles.css" />
+    <script src="levels.js" defer></script>
     <script src="game.js" defer></script>
   </head>
   <body
@@ -19,16 +20,29 @@
       id="ui-layer"
       class="absolute inset-0 pointer-events-none flex flex-col items-center justify-between py-6 z-10"
     >
-      <div class="flex justify-between w-full max-w-md px-6">
-        <div
-          class="bg-slate-800/80 px-4 py-2 rounded-lg border border-slate-600 shadow-lg pointer-events-auto"
-        >
-          <span
-            class="text-sm text-slate-400 font-bold uppercase tracking-wider"
-            >Time</span
+      <div class="flex justify-between w-full max-w-lg px-6 gap-3 flex-wrap">
+        <div class="flex gap-3">
+          <div
+            class="bg-slate-800/80 px-4 py-2 rounded-lg border border-slate-600 shadow-lg pointer-events-auto"
           >
-          <div id="timer-display" class="text-2xl font-mono text-emerald-400">
-            00:00
+            <span
+              class="text-sm text-slate-400 font-bold uppercase tracking-wider"
+              >Time</span
+            >
+            <div id="timer-display" class="text-2xl font-mono text-emerald-400">
+              00:00
+            </div>
+          </div>
+          <div
+            class="bg-slate-800/80 px-4 py-2 rounded-lg border border-slate-600 shadow-lg pointer-events-auto"
+          >
+            <span
+              class="text-sm text-slate-400 font-bold uppercase tracking-wider"
+              >Level</span
+            >
+            <div id="level-display" class="text-2xl font-mono text-sky-300">
+              1/20
+            </div>
           </div>
         </div>
         <div
@@ -137,7 +151,7 @@
       class="absolute inset-0 bg-emerald-950/90 hidden flex-col items-center justify-center z-50 backdrop-blur-md"
     >
       <h1 class="text-6xl font-black mb-2 text-emerald-400">ESCAPED!</h1>
-      <p class="text-xl text-emerald-200 mb-8">
+      <p id="win-message" class="text-xl text-emerald-200 mb-8">
         You successfully outsmarted them.
       </p>
       <button
