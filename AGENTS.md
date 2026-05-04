@@ -13,6 +13,7 @@ The current game is playable directly in a browser by opening `index.html`. It d
 - `game.js` - Game implementation: canvas drawing, input handling, game loop, map, AI movement, collision, win/loss screens.
 - `levels.js` - Static data for the 20 pre-generated 15x15 level maps.
 - `cat.png` - Cat player sprite, currently `100 x 105` PNG.
+- `treat.png` - Transparent PNG cat treat collectible sprite.
 - `avatar-face.png` - Close-up dog enemy sprite with transparent corners.
 - `avatar-dog.png` - Smiling dog enemy sprite with transparent corners.
 - `avatar-glasses.png` - Dog portrait enemy sprite with transparent corners.
@@ -35,6 +36,9 @@ Current rules:
 - Five avatars start around the maze and wander independently. Each avatar uses a local dog face/head sprite with a colored circular outline.
 - Avatars chase the cat while they have direct line of sight in the same row or column with no wall between them. Without line of sight, avatars take an open right turn only when it leads into a tunnel-like tile with at most two exits. Otherwise they keep moving in their current direction until they hit a wall, then pick a random open direction that does not immediately backtrack unless they are at a dead end.
 - After 20 seconds, an emerald portal spawns on a random empty tile.
+- Five cat treats spawn on random floor tiles each level.
+- Touching a treat removes it and turns the player into a super cat for 3 seconds.
+- While super cat is active, the cat gets a blinking border, a countdown timer appears in the HUD, avatars with direct line of sight run away instead of chasing, and any avatar the cat touches disappears until the next level.
 - Touching the portal after it appears wins the game.
 - Winning a level advances to the next map. Winning level 20 resets the next run back to level 1.
 - Touching an avatar loses the game.

@@ -8,6 +8,8 @@ window.onload = function () {
   const winScreen = document.getElementById("win-screen");
   const timerDisplay = document.getElementById("timer-display");
   const levelDisplay = document.getElementById("level-display");
+  const powerupPanel = document.getElementById("powerup-panel");
+  const powerupDisplay = document.getElementById("powerup-display");
   const objectiveDisplay = document.getElementById("objective-display");
 
   const btnStart = document.getElementById("start-btn");
@@ -21,6 +23,8 @@ window.onload = function () {
   const GRID_SIZE = 15;
   let TILE_SIZE = 32; // Calculated dynamically
   const ESCAPE_TIME = 20; // Seconds until escape portal appears
+  const TREAT_COUNT = 5;
+  const SUPER_CAT_DURATION = 3;
   const CAT_BASE_SPEED = 6.0;
   const SPACE_SPEED_MULTIPLIER = 6;
   const AVATAR_DIRECTIONS = [
@@ -47,6 +51,8 @@ window.onload = function () {
   let spaceWallPassEnabled = false; // Enabled by start code 1121
   let spaceSpeedBoostEnabled = false; // Enabled by start code 6767
   let spaceSpeedBoostActive = false;
+  let treats = [];
+  let superCatTimeRemaining = 0;
 
   // Controls
   let keys = {
@@ -112,6 +118,7 @@ window.onload = function () {
   let avatars = [];
 
   const catImage = new Image();
+  const treatImage = new Image();
   const avatarImages = {
     "avatar-face": new Image(),
     "avatar-dog": new Image(),
@@ -122,11 +129,13 @@ window.onload = function () {
   const redrawOnAssetLoad = () => draw();
 
   catImage.addEventListener("load", redrawOnAssetLoad);
+  treatImage.addEventListener("load", redrawOnAssetLoad);
   Object.values(avatarImages).forEach((image) => {
     image.addEventListener("load", redrawOnAssetLoad);
   });
 
   catImage.src = "cat.png";
+  treatImage.src = "treat.png";
   avatarImages["avatar-face"].src = "avatar-face.png";
   avatarImages["avatar-dog"].src = "avatar-dog.png";
   avatarImages["avatar-glasses"].src = "avatar-glasses.png";
@@ -225,6 +234,28 @@ window.onload = function () {
     });
   }
 
+  function createTreatsForMap() {
+    const blockedTiles = new Set([
+      `${CAT_START.x},${CAT_START.y}`,
+      ...avatars.map((avatar) => `${avatar.x},${avatar.y}`),
+    ]);
+    const availableTiles = getFloorTiles(map).filter(
+      (tile) => !blockedTiles.has(`${tile.x},${tile.y}`),
+    );
+    const placedTreats = [];
+
+    for (
+      let i = 0;
+      i < TREAT_COUNT && availableTiles.length > 0;
+      i++
+    ) {
+      const index = Math.floor(Math.random() * availableTiles.length);
+      placedTreats.push(availableTiles.splice(index, 1)[0]);
+    }
+
+    return placedTreats;
+  }
+
   // --- Initialization ---
   function initGame(options = {}) {
     if (options.resetToFirstLevel) {
@@ -245,6 +276,8 @@ window.onload = function () {
     spaceWallPassEnabled = startCodeInput.value.trim() === "1121";
     spaceSpeedBoostEnabled = startCodeInput.value.trim() === "6767";
     spaceSpeedBoostActive = false;
+    superCatTimeRemaining = 0;
+    powerupPanel.classList.add("hidden");
 
     // Reset Cat
     cat = {
@@ -262,6 +295,7 @@ window.onload = function () {
     // Reset Avatars
     avatars = createAvatarsForMap();
     avatars.forEach(pickRandomAvatarDirection);
+    treats = createTreatsForMap();
 
     gameState = "PLAYING";
     startScreen.classList.add("hidden");
@@ -512,8 +546,48 @@ window.onload = function () {
     const nextY = avatar.y + chaseDir.y;
     if (!canMove(nextX, nextY)) return null;
 
+    if (superCatTimeRemaining > 0) {
+      const fleeDir = { x: -chaseDir.x, y: -chaseDir.y };
+      const fleeX = avatar.x + fleeDir.x;
+      const fleeY = avatar.y + fleeDir.y;
+      if (canMove(fleeX, fleeY)) {
+        avatar.dir = fleeDir;
+        return { x: fleeX, y: fleeY };
+      }
+
+      const fallback = getOpenAvatarMoves(avatar).sort((a, b) => {
+        const distanceA = Math.abs(a.x - cat.x) + Math.abs(a.y - cat.y);
+        const distanceB = Math.abs(b.x - cat.x) + Math.abs(b.y - cat.y);
+        return distanceB - distanceA;
+      })[0];
+
+      if (fallback) {
+        avatar.dir = { ...fallback.dir };
+        return fallback;
+      }
+    }
+
     avatar.dir = chaseDir;
     return { x: nextX, y: nextY };
+  }
+
+  function collectTreats() {
+    if (treats.length === 0) return;
+
+    const catTileX = cat.x + (cat.targetX - cat.x) * cat.progress;
+    const catTileY = cat.y + (cat.targetY - cat.y) * cat.progress;
+
+    treats = treats.filter((treat) => {
+      const distSq =
+        Math.pow(catTileX - treat.x, 2) + Math.pow(catTileY - treat.y, 2);
+      if (distSq < 0.25) {
+        superCatTimeRemaining = SUPER_CAT_DURATION;
+        powerupDisplay.textContent = `${SUPER_CAT_DURATION.toFixed(1)}s`;
+        powerupPanel.classList.remove("hidden");
+        return false;
+      }
+      return true;
+    });
   }
 
   function getNextRandomAvatarMove(avatar) {
@@ -539,7 +613,12 @@ window.onload = function () {
     let emptySpots = [];
     for (let y = 0; y < GRID_SIZE; y++) {
       for (let x = 0; x < GRID_SIZE; x++) {
-        if (map[y][x] === 0 && (x !== cat.targetX || y !== cat.targetY)) {
+        const hasTreat = treats.some((treat) => treat.x === x && treat.y === y);
+        if (
+          map[y][x] === 0 &&
+          (x !== cat.targetX || y !== cat.targetY) &&
+          !hasTreat
+        ) {
           emptySpots.push({ x, y });
         }
       }
@@ -581,6 +660,14 @@ window.onload = function () {
     let seconds = Math.floor(timeElapsed);
     let displaySecs = String(seconds).padStart(2, "0");
     timerDisplay.textContent = `00:${displaySecs}`;
+
+    if (superCatTimeRemaining > 0) {
+      superCatTimeRemaining = Math.max(0, superCatTimeRemaining - dt);
+      powerupDisplay.textContent = `${superCatTimeRemaining.toFixed(1)}s`;
+      if (superCatTimeRemaining === 0) {
+        powerupPanel.classList.add("hidden");
+      }
+    }
 
     // Spawn escape portal after threshold
     if (seconds >= ESCAPE_TIME && !escapePortal) {
@@ -628,8 +715,10 @@ window.onload = function () {
       }
     }
 
+    collectTreats();
+
     // 2. Update Avatars
-    for (let avatar of avatars) {
+    avatars = avatars.filter((avatar) => {
       if (!avatar.isMoving) {
         let step = getNextRandomAvatarMove(avatar);
 
@@ -666,11 +755,16 @@ window.onload = function () {
 
       if (distSq < 0.3) {
         // Threshold for collision
+        if (superCatTimeRemaining > 0) {
+          return false;
+        }
+
         gameState = "GAMEOVER";
         gameOverScreen.classList.remove("hidden");
         gameOverScreen.style.display = "flex";
       }
-    }
+      return true;
+    });
   }
 
   // --- Rendering ---
@@ -707,6 +801,35 @@ window.onload = function () {
           }
           ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
         }
+      }
+    }
+
+    // Draw Treats
+    for (let treat of treats) {
+      const px = treat.x * TILE_SIZE + TILE_SIZE / 2;
+      const py = treat.y * TILE_SIZE + TILE_SIZE / 2;
+      const pulse = Math.abs(Math.sin(timeElapsed * 4)) * 0.2 + 0.8;
+      const imgSize = TILE_SIZE * 0.72 * pulse;
+
+      if (treatImage.complete && treatImage.naturalWidth > 0) {
+        ctx.drawImage(
+          treatImage,
+          px - imgSize / 2,
+          py - imgSize / 2,
+          imgSize,
+          imgSize,
+        );
+      } else {
+        ctx.fillStyle = "#5eead4";
+        ctx.beginPath();
+        ctx.roundRect(
+          px - imgSize / 2,
+          py - imgSize / 2,
+          imgSize,
+          imgSize,
+          Math.max(4, TILE_SIZE * 0.12),
+        );
+        ctx.fill();
       }
     }
 
@@ -858,8 +981,10 @@ window.onload = function () {
     }
     ctx.beginPath();
     ctx.arc(catPos.x, catPos.y, imgSize / 2, 0, Math.PI * 2);
-    ctx.strokeStyle = "#facc15";
-    ctx.lineWidth = Math.max(2, TILE_SIZE * 0.08);
+    const blinkOn =
+      superCatTimeRemaining > 0 && Math.floor(timeElapsed * 12) % 2 === 0;
+    ctx.strokeStyle = blinkOn ? "#f8fafc" : "#facc15";
+    ctx.lineWidth = Math.max(2, TILE_SIZE * (blinkOn ? 0.12 : 0.08));
     ctx.stroke();
     ctx.restore();
   }
