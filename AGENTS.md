@@ -27,7 +27,7 @@ Current rules:
 
 - The map is a randomly generated 16x16 grid.
 - `1` means wall and `0` means floor.
-- Generated maps keep every floor tile connected and avoid dead-end floor tiles.
+- Generated maps keep every floor tile connected, avoid dead-end floor tiles, and avoid 2x2 open floor blocks so the map stays tunnel-like.
 - The cat starts at tile `(1, 1)`.
 - Five avatars start around the maze and wander independently. Each avatar uses a local dog face/head sprite with a colored circular outline.
 - Avatars chase the cat while they have direct line of sight in the same row or column with no wall between them. Without line of sight, avatars take an open right turn only when it leads into a tunnel-like tile with at most two exits. Otherwise they keep moving in their current direction until they hit a wall, then pick a random open direction that does not immediately backtrack unless they are at a dead end.
@@ -57,7 +57,7 @@ Developer/debug controls currently present in the game:
 - The canvas uses pixelated rendering for a retro tile look.
 - Tailwind is loaded from `https://cdn.tailwindcss.com`, so styling depends on internet access unless this is changed later.
 - Game state is kept inside `window.onload` in `index.html`.
-- Map generation starts from an open bordered grid, adds randomized interior walls, and rejects layouts that disconnect the floor or create dead ends.
+- Map generation starts from a solid bordered grid, carves one-tile-wide tunnels, then braids dead ends only when the opening does not create a 2x2 open floor block.
 - The game loop uses `requestAnimationFrame`.
 - Movement is grid-based but animated between tiles with per-entity `progress`.
 - Collision checks use interpolated tile positions so moving entities can collide during transitions.

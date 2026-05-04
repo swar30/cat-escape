@@ -275,8 +275,7 @@
         ];
 
         const CAT_START = { x: 1, y: 1 };
-        const MIN_FLOOR_TILES = 118;
-        const TARGET_RANDOM_WALLS = 42;
+        const MIN_FLOOR_TILES = 75;
         const MAX_MAP_ATTEMPTS = 80;
 
         // --- Game State ---
@@ -377,14 +376,23 @@
         avatarImages["avatar-collie"].src = "avatar-collie.png";
 
         // --- Map Generation ---
-        function createOpenMap() {
+        function createSolidMap() {
           return Array.from({ length: GRID_SIZE }, (_, y) =>
-            Array.from({ length: GRID_SIZE }, (_, x) =>
-              x === 0 || x === GRID_SIZE - 1 || y === 0 || y === GRID_SIZE - 1
-                ? 1
-                : 0,
-            ),
+            Array.from({ length: GRID_SIZE }, () => 1),
           );
+        }
+
+        function createFallbackTunnelMap() {
+          const fallback = createSolidMap();
+          for (let x = 1; x < GRID_SIZE - 1; x++) {
+            fallback[1][x] = 0;
+            fallback[GRID_SIZE - 2][x] = 0;
+          }
+          for (let y = 1; y < GRID_SIZE - 1; y++) {
+            fallback[y][1] = 0;
+            fallback[y][GRID_SIZE - 2] = 0;
+          }
+          return fallback;
         }
 
         function shuffle(items) {
@@ -451,53 +459,137 @@
           );
         }
 
+        function hasNoOpenFloorBlocks(testMap) {
+          for (let y = 1; y < GRID_SIZE - 2; y++) {
+            for (let x = 1; x < GRID_SIZE - 2; x++) {
+              if (
+                testMap[y][x] === 0 &&
+                testMap[y][x + 1] === 0 &&
+                testMap[y + 1][x] === 0 &&
+                testMap[y + 1][x + 1] === 0
+              ) {
+                return false;
+              }
+            }
+          }
+          return true;
+        }
+
         function isValidMap(testMap) {
           return (
             testMap[CAT_START.y][CAT_START.x] === 0 &&
             isConnectedMap(testMap) &&
-            hasNoDeadEnds(testMap)
+            hasNoDeadEnds(testMap) &&
+            hasNoOpenFloorBlocks(testMap)
           );
         }
 
-        function generateRandomMap() {
-          let bestMap = createOpenMap();
-          let bestWallCount = 0;
+        function getDeadEndTiles(testMap) {
+          return getFloorTiles(testMap).filter(
+            (tile) => countOpenNeighborsInMap(testMap, tile.x, tile.y) === 1,
+          );
+        }
 
-          for (let attempt = 0; attempt < MAX_MAP_ATTEMPTS; attempt++) {
-            const candidate = createOpenMap();
-            const wallCandidates = [];
+        function carveMazeMap() {
+          const candidate = createSolidMap();
+          const visited = new Set();
+          const stack = [{ ...CAT_START }];
 
-            for (let y = 1; y < GRID_SIZE - 1; y++) {
-              for (let x = 1; x < GRID_SIZE - 1; x++) {
-                const distanceFromCat =
-                  Math.abs(x - CAT_START.x) + Math.abs(y - CAT_START.y);
-                if (distanceFromCat > 2) {
-                  wallCandidates.push({ x, y });
-                }
-              }
+          candidate[CAT_START.y][CAT_START.x] = 0;
+          visited.add(`${CAT_START.x},${CAT_START.y}`);
+
+          while (stack.length > 0) {
+            const current = stack[stack.length - 1];
+            const neighbors = shuffle(AVATAR_DIRECTIONS)
+              .map((dir) => ({
+                x: current.x + dir.x * 2,
+                y: current.y + dir.y * 2,
+                wallX: current.x + dir.x,
+                wallY: current.y + dir.y,
+              }))
+              .filter(
+                (tile) =>
+                  tile.x > 0 &&
+                  tile.x < GRID_SIZE - 1 &&
+                  tile.y > 0 &&
+                  tile.y < GRID_SIZE - 1 &&
+                  !visited.has(`${tile.x},${tile.y}`),
+              );
+
+            if (neighbors.length === 0) {
+              stack.pop();
+              continue;
             }
 
-            let wallCount = 0;
-            for (const tile of shuffle(wallCandidates)) {
-              if (wallCount >= TARGET_RANDOM_WALLS) break;
-
-              candidate[tile.y][tile.x] = 1;
-              if (isValidMap(candidate)) {
-                wallCount++;
-              } else {
-                candidate[tile.y][tile.x] = 0;
-              }
-            }
-
-            if (wallCount > bestWallCount && isValidMap(candidate)) {
-              bestMap = candidate.map((row) => [...row]);
-              bestWallCount = wallCount;
-            }
-
-            if (bestWallCount >= TARGET_RANDOM_WALLS) break;
+            const next = neighbors[0];
+            candidate[next.wallY][next.wallX] = 0;
+            candidate[next.y][next.x] = 0;
+            visited.add(`${next.x},${next.y}`);
+            stack.push({ x: next.x, y: next.y });
           }
 
-          return bestMap;
+          return candidate;
+        }
+
+        function braidDeadEnds(testMap) {
+          let changed = true;
+          let guard = 0;
+
+          while (changed && guard < 200) {
+            changed = false;
+            guard++;
+
+            for (const tile of shuffle(getDeadEndTiles(testMap))) {
+              const candidates = shuffle(AVATAR_DIRECTIONS)
+                .map((dir) => ({
+                  wallX: tile.x + dir.x,
+                  wallY: tile.y + dir.y,
+                  targetX: tile.x + dir.x * 2,
+                  targetY: tile.y + dir.y * 2,
+                }))
+                .filter(
+                  (opening) =>
+                    opening.targetX > 0 &&
+                    opening.targetX < GRID_SIZE - 1 &&
+                    opening.targetY > 0 &&
+                    opening.targetY < GRID_SIZE - 1 &&
+                    testMap[opening.wallY][opening.wallX] === 1 &&
+                    testMap[opening.targetY][opening.targetX] === 0,
+                );
+
+              for (const opening of candidates) {
+                testMap[opening.wallY][opening.wallX] = 0;
+
+                if (
+                  hasNoOpenFloorBlocks(testMap) &&
+                  countOpenNeighborsInMap(testMap, tile.x, tile.y) > 1
+                ) {
+                  changed = true;
+                  break;
+                }
+
+                testMap[opening.wallY][opening.wallX] = 1;
+              }
+            }
+          }
+
+          return testMap;
+        }
+
+        function generateRandomMap() {
+          let fallbackMap = null;
+
+          for (let attempt = 0; attempt < MAX_MAP_ATTEMPTS; attempt++) {
+            const candidate = braidDeadEnds(carveMazeMap());
+            if (!fallbackMap && hasNoOpenFloorBlocks(candidate)) {
+              fallbackMap = candidate.map((row) => [...row]);
+            }
+            if (isValidMap(candidate)) {
+              return candidate;
+            }
+          }
+
+          return fallbackMap || createFallbackTunnelMap();
         }
 
         function pickAvatarSpawn(preferredSpawn, usedSpawns) {
