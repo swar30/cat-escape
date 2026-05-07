@@ -39,10 +39,11 @@ Current rules:
 - Five cat treats spawn on random floor tiles each level.
 - Touching a treat removes it and turns the player into a super cat for 3 seconds.
 - While super cat is active, the cat gets a blinking border, a countdown timer appears in the HUD, avatars with direct line of sight run away instead of chasing, and any avatar the cat touches disappears until the next level.
+- Eating dogs while super cat is active awards progressive per-level points: the first dog eaten in a level gives 1 point, the second gives 2 points, the third gives 3 points, and so on. Treats, survival time, portals, and level completion do not award points.
 - Touching the portal after it appears wins the game.
 - Winning a level advances to the next map. Winning level 20 resets the next run back to level 1.
 - Touching an avatar loses the game.
-- Starting begins at level 1. Retrying after being caught restarts the current level.
+- Starting begins at level 1. Retrying after being caught restarts the current level and restores the score to the value it had at the start of that level.
 
 ## Controls
 

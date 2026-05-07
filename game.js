@@ -8,6 +8,7 @@ window.onload = function () {
   const winScreen = document.getElementById("win-screen");
   const timerDisplay = document.getElementById("timer-display");
   const levelDisplay = document.getElementById("level-display");
+  const scoreDisplay = document.getElementById("score-display");
   const powerupPanel = document.getElementById("powerup-panel");
   const powerupDisplay = document.getElementById("powerup-display");
   const objectiveDisplay = document.getElementById("objective-display");
@@ -53,6 +54,9 @@ window.onload = function () {
   let spaceSpeedBoostActive = false;
   let treats = [];
   let superCatTimeRemaining = 0;
+  let score = 0;
+  let levelStartScore = 0;
+  let dogsEatenThisLevel = 0;
 
   // Controls
   let keys = {
@@ -182,6 +186,10 @@ window.onload = function () {
     levelDisplay.textContent = `${currentLevel}/${TOTAL_LEVELS || 1}`;
   }
 
+  function updateScoreDisplay() {
+    scoreDisplay.textContent = String(score);
+  }
+
   function pickAvatarSpawn(preferredSpawn, usedSpawns) {
     const available = getFloorTiles(map).filter((tile) => {
       const key = `${tile.x},${tile.y}`;
@@ -263,6 +271,17 @@ window.onload = function () {
       finishedAllLevels = false;
     }
 
+    if (options.resetRunScore) {
+      score = 0;
+      levelStartScore = 0;
+    } else if (options.restoreLevelScore) {
+      score = levelStartScore;
+    }
+
+    dogsEatenThisLevel = 0;
+    levelStartScore = score;
+    updateScoreDisplay();
+
     map = getLevelMap(currentLevelIndex);
     updateLevelDisplay();
 
@@ -315,6 +334,7 @@ window.onload = function () {
   }
 
   updateLevelDisplay();
+  updateScoreDisplay();
 
   // --- Resize Handling ---
   function resizeCanvas() {
@@ -475,11 +495,16 @@ window.onload = function () {
       updateStartCodeHelp();
       return;
     }
-    initGame({ resetToFirstLevel: true });
+    initGame({ resetToFirstLevel: true, resetRunScore: true });
   });
-  btnRestart.addEventListener("click", initGame);
+  btnRestart.addEventListener("click", () => {
+    initGame({ restoreLevelScore: true });
+  });
   btnPlayAgain.addEventListener("click", () => {
-    initGame({ resetToFirstLevel: finishedAllLevels });
+    initGame({
+      resetToFirstLevel: finishedAllLevels,
+      resetRunScore: finishedAllLevels,
+    });
   });
 
   // --- Game Logic ---
@@ -775,6 +800,9 @@ window.onload = function () {
       if (distSq < 0.3) {
         // Threshold for collision
         if (superCatTimeRemaining > 0) {
+          dogsEatenThisLevel++;
+          score += dogsEatenThisLevel;
+          updateScoreDisplay();
           return false;
         }
 
