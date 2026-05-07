@@ -47,7 +47,7 @@ Current rules:
 ## Controls
 
 - Keyboard movement: arrow keys or WASD.
-- Mobile movement: on-screen D-pad.
+- Mobile movement: on-screen thumb joystick.
 - Speed up: `+` key.
 - Speed down: `-` key.
 - Restart after game over: Space.

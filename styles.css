@@ -10,22 +10,58 @@ canvas {
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
   border-radius: 8px;
 }
-.dpad-btn {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  user-select: none;
-  transition: background-color 0.1s;
-}
-.dpad-btn:active {
-  background-color: rgba(255, 255, 255, 0.3);
-}
 .mobile-controls {
   display: none;
+}
+.mobile-joystick {
+  position: relative;
+  width: clamp(150px, 44vw, 190px);
+  height: clamp(150px, 44vw, 190px);
+  border-radius: 50%;
+  border: 2px solid rgba(148, 163, 184, 0.45);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.18) 0 28%, transparent 29%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.16), rgba(15, 23, 42, 0.58));
+  box-shadow:
+    inset 0 0 24px rgba(15, 23, 42, 0.75),
+    0 10px 24px rgba(0, 0, 0, 0.28);
+  touch-action: none;
+  user-select: none;
+}
+.mobile-joystick.is-active {
+  border-color: rgba(251, 146, 60, 0.8);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(251, 146, 60, 0.16) 0 28%, transparent 29%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.2), rgba(15, 23, 42, 0.58));
+}
+.joystick-ring {
+  position: absolute;
+  inset: 24%;
+  border-radius: 50%;
+  border: 2px solid rgba(226, 232, 240, 0.24);
+}
+.joystick-thumb {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42%;
+  height: 42%;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.78);
+  background: linear-gradient(145deg, #fb923c, #f43f5e);
+  box-shadow:
+    inset 0 3px 7px rgba(255, 255, 255, 0.28),
+    0 8px 18px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  transition:
+    transform 0.08s ease-out,
+    box-shadow 0.08s ease-out;
+}
+.mobile-joystick.is-active .joystick-thumb {
+  box-shadow:
+    inset 0 3px 7px rgba(255, 255, 255, 0.32),
+    0 10px 24px rgba(251, 146, 60, 0.38);
+  transition: box-shadow 0.08s ease-out;
 }
 @media (max-width: 767px) {
   body {
@@ -41,11 +77,6 @@ canvas {
     display: flex;
     gap: 12px;
     padding-top: 12px;
-  }
-  .mobile-dpad {
-    width: clamp(168px, 52vw, 224px);
-    height: clamp(168px, 52vw, 224px);
-    gap: 10px;
   }
   canvas {
     margin-top: 16px;

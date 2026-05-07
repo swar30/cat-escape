@@ -395,27 +395,70 @@ window.onload = function () {
     else nextDir = { x: 0, y: 0 };
   }
 
-  // Virtual D-pad logic
-  const bindTouch = (id, dx, dy) => {
-    const btn = document.getElementById(id);
-    const start = (e) => {
-      e.preventDefault();
-      nextDir = { x: dx, y: dy };
-    };
-    const end = (e) => {
-      e.preventDefault();
+  // Virtual thumb joystick logic
+  const joystick = document.getElementById("mobile-joystick");
+  const joystickThumb = document.getElementById("joystick-thumb");
+  let activeJoystickPointer = null;
+
+  function setJoystickThumb(x, y) {
+    joystickThumb.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+  }
+
+  function updateJoystickDirection(e) {
+    const rect = joystick.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const rawX = e.clientX - centerX;
+    const rawY = e.clientY - centerY;
+    const distance = Math.hypot(rawX, rawY);
+    const maxDistance = rect.width * 0.28;
+    const deadZone = rect.width * 0.12;
+    const scale = distance > maxDistance ? maxDistance / distance : 1;
+    const thumbX = rawX * scale;
+    const thumbY = rawY * scale;
+
+    setJoystickThumb(thumbX, thumbY);
+
+    if (distance < deadZone) {
       nextDir = { x: 0, y: 0 };
-    };
-    btn.addEventListener("touchstart", start);
-    btn.addEventListener("touchend", end);
-    btn.addEventListener("mousedown", start);
-    btn.addEventListener("mouseup", end);
-    btn.addEventListener("mouseleave", end);
-  };
-  bindTouch("btn-up", 0, -1);
-  bindTouch("btn-down", 0, 1);
-  bindTouch("btn-left", -1, 0);
-  bindTouch("btn-right", 1, 0);
+    } else if (Math.abs(rawX) > Math.abs(rawY)) {
+      nextDir = { x: rawX > 0 ? 1 : -1, y: 0 };
+    } else {
+      nextDir = { x: 0, y: rawY > 0 ? 1 : -1 };
+    }
+  }
+
+  function resetJoystick() {
+    activeJoystickPointer = null;
+    joystick.classList.remove("is-active");
+    setJoystickThumb(0, 0);
+    updateNextDir();
+  }
+
+  joystick.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    activeJoystickPointer = e.pointerId;
+    joystick.setPointerCapture(e.pointerId);
+    joystick.classList.add("is-active");
+    updateJoystickDirection(e);
+  });
+
+  joystick.addEventListener("pointermove", (e) => {
+    if (e.pointerId !== activeJoystickPointer) return;
+    e.preventDefault();
+    updateJoystickDirection(e);
+  });
+
+  joystick.addEventListener("pointerup", (e) => {
+    if (e.pointerId !== activeJoystickPointer) return;
+    e.preventDefault();
+    resetJoystick();
+  });
+
+  joystick.addEventListener("pointercancel", (e) => {
+    if (e.pointerId !== activeJoystickPointer) return;
+    resetJoystick();
+  });
 
   // --- UI Buttons ---
   function updateStartCodeHelp() {

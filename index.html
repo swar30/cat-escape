@@ -90,7 +90,7 @@
       <div class="flex gap-4 mb-8 text-sm text-slate-400">
         <div class="bg-slate-800 p-3 rounded text-center">💻 WASD / Arrows</div>
         <div class="bg-slate-800 p-3 rounded text-center">
-          📱 On-screen D-Pad
+          📱 Thumb Joystick
         </div>
       </div>
       <label
@@ -165,13 +165,14 @@
     <div
       class="mobile-controls md:hidden flex-col items-center pointer-events-auto opacity-80 z-20"
     >
-      <div class="mobile-dpad grid grid-cols-3">
-        <div aria-hidden="true"></div>
-        <button class="dpad-btn" id="btn-up">↑</button>
-        <div aria-hidden="true"></div>
-        <button class="dpad-btn" id="btn-left">←</button>
-        <button class="dpad-btn" id="btn-down">↓</button>
-        <button class="dpad-btn" id="btn-right">→</button>
+      <div
+        class="mobile-joystick"
+        id="mobile-joystick"
+        aria-label="Mobile movement joystick"
+        role="application"
+      >
+        <div class="joystick-ring" aria-hidden="true"></div>
+        <div class="joystick-thumb" id="joystick-thumb" aria-hidden="true"></div>
       </div>
     </div>
 
