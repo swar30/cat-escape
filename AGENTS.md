@@ -21,6 +21,8 @@ The current game is playable directly in a browser by opening `index.html`. It d
 - `avatar-collie.png` - Black-and-white collie enemy sprite.
 - `avatar-face-source.png` - Source dog crop used to create `avatar-face.png`.
 - `avatar-collie-source.png` - Source screenshot used to create `avatar-collie.png`.
+- `sounds/dog-bark.mp3` - Dog bark sound played when an avatar first sees the cat during normal play.
+- `sounds/cute-cat.mp3` - Cat sound played when the cat collects a treat and enters power-up mode.
 - `AGENTS.md` - This file, used to brief future coding agents on the project.
 
 ## Current Game Design
@@ -35,10 +37,11 @@ Current rules:
 - The cat starts at tile `(1, 1)`.
 - Five avatars start around the maze and wander independently. Each avatar uses a local dog face/head sprite with a colored circular outline.
 - Avatars chase the cat while they have direct line of sight in the same row or column with no wall between them. Without line of sight, avatars take an open right turn only when it leads into a tunnel-like tile with at most two exits. Otherwise they keep moving in their current direction until they hit a wall, then pick a random open direction that does not immediately backtrack unless they are at a dead end.
+- An avatar plays the dog bark sound once when it first gains direct line of sight to the cat during normal play. Barking is suppressed while super cat is active.
 - After 20 seconds, an emerald portal spawns on a random empty tile.
 - The objective message is shown before play starts, then hidden during active play so the HUD counters have room on mobile.
 - Five cat treats spawn on random floor tiles each level.
-- Touching a treat removes it and turns the player into a super cat for 3 seconds.
+- Touching a treat removes it, plays the cat sound, and turns the player into a super cat for 3 seconds.
 - The power-up timer is always visible in the HUD, dims at `0.0s` when inactive, and counts down while super cat is active.
 - While super cat is active, the cat gets a blinking border, avatars with direct line of sight run away instead of chasing, and any avatar the cat touches disappears until the next level.
 - Eating dogs while super cat is active awards progressive per-level points: the first dog eaten in a level gives 1 point, the second gives 2 points, the third gives 3 points, and so on. Treats, survival time, portals, and level completion do not award points.

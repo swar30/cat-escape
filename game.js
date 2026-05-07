@@ -131,6 +131,8 @@ window.onload = function () {
     "avatar-smile": new Image(),
     "avatar-collie": new Image(),
   };
+  const dogBarkSound = new Audio("sounds/dog-bark.mp3");
+  const catPowerupSound = new Audio("sounds/cute-cat.mp3");
   const redrawOnAssetLoad = () => draw();
 
   catImage.addEventListener("load", redrawOnAssetLoad);
@@ -146,6 +148,14 @@ window.onload = function () {
   avatarImages["avatar-glasses"].src = "avatar-glasses.png";
   avatarImages["avatar-smile"].src = "avatar-smile.png";
   avatarImages["avatar-collie"].src = "avatar-collie.png";
+
+  function playSound(sound) {
+    sound.currentTime = 0;
+    const playAttempt = sound.play();
+    if (playAttempt) {
+      playAttempt.catch(() => {});
+    }
+  }
 
   // --- Level Data ---
   function createFallbackTunnelMap() {
@@ -246,6 +256,7 @@ window.onload = function () {
         dir: { ...blueprint.dir },
         color: blueprint.color,
         image: blueprint.image,
+        wasSeeingCat: false,
       };
     });
   }
@@ -584,22 +595,30 @@ window.onload = function () {
     }
 
     if (!chaseDir || (chaseDir.x === 0 && chaseDir.y === 0)) {
+      avatar.wasSeeingCat = false;
       return null;
     }
 
     let checkX = avatar.x + chaseDir.x;
     let checkY = avatar.y + chaseDir.y;
     while (checkX !== cat.x || checkY !== cat.y) {
-      if (!canMove(checkX, checkY)) return null;
+      if (!canMove(checkX, checkY)) {
+        avatar.wasSeeingCat = false;
+        return null;
+      }
       checkX += chaseDir.x;
       checkY += chaseDir.y;
     }
 
     const nextX = avatar.x + chaseDir.x;
     const nextY = avatar.y + chaseDir.y;
-    if (!canMove(nextX, nextY)) return null;
+    if (!canMove(nextX, nextY)) {
+      avatar.wasSeeingCat = false;
+      return null;
+    }
 
     if (superCatTimeRemaining > 0) {
+      avatar.wasSeeingCat = false;
       const fleeDir = { x: -chaseDir.x, y: -chaseDir.y };
       const fleeX = avatar.x + fleeDir.x;
       const fleeY = avatar.y + fleeDir.y;
@@ -620,6 +639,10 @@ window.onload = function () {
       }
     }
 
+    if (!avatar.wasSeeingCat) {
+      playSound(dogBarkSound);
+    }
+    avatar.wasSeeingCat = true;
     avatar.dir = chaseDir;
     return { x: nextX, y: nextY };
   }
@@ -637,6 +660,7 @@ window.onload = function () {
         superCatTimeRemaining = SUPER_CAT_DURATION;
         powerupDisplay.textContent = `${SUPER_CAT_DURATION.toFixed(1)}s`;
         setPowerupActive(true);
+        playSound(catPowerupSound);
         return false;
       }
       return true;
