@@ -36,6 +36,7 @@ Current rules:
 - Five avatars start around the maze and wander independently. Each avatar uses a local dog face/head sprite with a colored circular outline.
 - Avatars chase the cat while they have direct line of sight in the same row or column with no wall between them. Without line of sight, avatars take an open right turn only when it leads into a tunnel-like tile with at most two exits. Otherwise they keep moving in their current direction until they hit a wall, then pick a random open direction that does not immediately backtrack unless they are at a dead end.
 - After 20 seconds, an emerald portal spawns on a random empty tile.
+- The objective message is shown before play starts, then hidden during active play so the HUD counters have room on mobile.
 - Five cat treats spawn on random floor tiles each level.
 - Touching a treat removes it and turns the player into a super cat for 3 seconds.
 - The power-up timer is always visible in the HUD, dims at `0.0s` when inactive, and counts down while super cat is active.

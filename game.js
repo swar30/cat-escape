@@ -11,6 +11,7 @@ window.onload = function () {
   const scoreDisplay = document.getElementById("score-display");
   const powerupPanel = document.getElementById("powerup-panel");
   const powerupDisplay = document.getElementById("powerup-display");
+  const objectivePanel = document.getElementById("objective-panel");
   const objectiveDisplay = document.getElementById("objective-display");
 
   const btnStart = document.getElementById("start-btn");
@@ -298,6 +299,7 @@ window.onload = function () {
     objectiveDisplay.textContent = `SURVIVE ${ESCAPE_TIME}s TO ESCAPE`;
     objectiveDisplay.className =
       "text-sm font-bold text-amber-400 animate-pulse";
+    objectivePanel.classList.add("hidden");
     passThroughWalls = false;
     spaceWallPassEnabled = startCodeInput.value.trim() === "1121";
     spaceSpeedBoostEnabled = startCodeInput.value.trim() === "6767";
