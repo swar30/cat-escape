@@ -190,6 +190,13 @@ window.onload = function () {
     scoreDisplay.textContent = String(score);
   }
 
+  function setPowerupActive(isActive) {
+    powerupPanel.classList.toggle("powerup-inactive", !isActive);
+    if (!isActive) {
+      powerupDisplay.textContent = "0.0s";
+    }
+  }
+
   function pickAvatarSpawn(preferredSpawn, usedSpawns) {
     const available = getFloorTiles(map).filter((tile) => {
       const key = `${tile.x},${tile.y}`;
@@ -296,7 +303,7 @@ window.onload = function () {
     spaceSpeedBoostEnabled = startCodeInput.value.trim() === "6767";
     spaceSpeedBoostActive = false;
     superCatTimeRemaining = 0;
-    powerupPanel.classList.add("hidden");
+    setPowerupActive(false);
 
     // Reset Cat
     cat = {
@@ -627,7 +634,7 @@ window.onload = function () {
       if (distSq < 0.25) {
         superCatTimeRemaining = SUPER_CAT_DURATION;
         powerupDisplay.textContent = `${SUPER_CAT_DURATION.toFixed(1)}s`;
-        powerupPanel.classList.remove("hidden");
+        setPowerupActive(true);
         return false;
       }
       return true;
@@ -709,7 +716,7 @@ window.onload = function () {
       superCatTimeRemaining = Math.max(0, superCatTimeRemaining - dt);
       powerupDisplay.textContent = `${superCatTimeRemaining.toFixed(1)}s`;
       if (superCatTimeRemaining === 0) {
-        powerupPanel.classList.add("hidden");
+        setPowerupActive(false);
       }
     }
 

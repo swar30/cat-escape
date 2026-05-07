@@ -20,62 +20,40 @@
       id="ui-layer"
       class="absolute inset-0 pointer-events-none flex flex-col items-center justify-between py-6 z-10"
     >
-      <div
-        class="flex justify-center md:justify-between w-full max-w-2xl px-6 gap-3 flex-wrap"
-      >
-        <div class="flex flex-wrap justify-center md:justify-start gap-3">
-          <div
-            class="bg-slate-800/80 px-4 py-2 rounded-lg border border-slate-600 shadow-lg pointer-events-auto"
-          >
-            <span
-              class="text-sm text-slate-400 font-bold uppercase tracking-wider"
-              >Time</span
-            >
+      <div class="hud-row">
+        <div class="hud-stats">
+          <div class="hud-panel">
+            <span class="hud-label">Time</span>
             <div id="timer-display" class="text-2xl font-mono text-emerald-400">
               00:00
             </div>
           </div>
-          <div
-            class="bg-slate-800/80 px-4 py-2 rounded-lg border border-slate-600 shadow-lg pointer-events-auto"
-          >
-            <span
-              class="text-sm text-slate-400 font-bold uppercase tracking-wider"
-              >Level</span
-            >
+          <div class="hud-panel">
+            <span class="hud-label">Level</span>
             <div id="level-display" class="text-2xl font-mono text-sky-300">
               1/20
             </div>
           </div>
-          <div
-            class="bg-slate-800/80 px-4 py-2 rounded-lg border border-slate-600 shadow-lg pointer-events-auto"
-          >
-            <span
-              class="text-sm text-slate-400 font-bold uppercase tracking-wider"
-              >Score</span
-            >
+          <div class="hud-panel">
+            <span class="hud-label">Score</span>
             <div id="score-display" class="text-2xl font-mono text-amber-300">
               0
             </div>
           </div>
           <div
             id="powerup-panel"
-            class="hidden bg-slate-800/80 px-4 py-2 rounded-lg border border-emerald-400 shadow-lg pointer-events-auto"
+            class="hud-panel powerup-inactive"
           >
-            <span
-              class="text-sm text-emerald-200 font-bold uppercase tracking-wider"
-              >Power</span
-            >
+            <span class="hud-label">Power</span>
             <div
               id="powerup-display"
               class="text-2xl font-mono text-emerald-300"
             >
-              3.0s
+              0.0s
             </div>
           </div>
         </div>
-        <div
-          class="bg-slate-800/80 px-4 py-2 rounded-lg border border-slate-600 shadow-lg pointer-events-auto flex items-center"
-        >
+        <div class="hud-objective">
           <span
             id="objective-display"
             class="text-sm font-bold text-amber-400 animate-pulse"
