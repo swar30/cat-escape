@@ -133,6 +133,7 @@ window.onload = function () {
   };
   const dogBarkSound = new Audio("sounds/dog-bark.mp3");
   const catPowerupSound = new Audio("sounds/cute-cat.mp3");
+  const eatingSound = new Audio("sounds/eating.mp3");
   const redrawOnAssetLoad = () => draw();
 
   catImage.addEventListener("load", redrawOnAssetLoad);
@@ -835,6 +836,7 @@ window.onload = function () {
         if (superCatTimeRemaining > 0) {
           dogsEatenThisLevel++;
           score += dogsEatenThisLevel;
+          playSound(eatingSound);
           updateScoreDisplay();
           return false;
         }

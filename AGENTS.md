@@ -23,6 +23,7 @@ The current game is playable directly in a browser by opening `index.html`. It d
 - `avatar-collie-source.png` - Source screenshot used to create `avatar-collie.png`.
 - `sounds/dog-bark.mp3` - Dog bark sound played when an avatar first sees the cat during normal play.
 - `sounds/cute-cat.mp3` - Cat sound played when the cat collects a treat and enters power-up mode.
+- `sounds/eating.mp3` - Eating sound played when super cat catches a dog.
 - `AGENTS.md` - This file, used to brief future coding agents on the project.
 
 ## Current Game Design
@@ -44,6 +45,7 @@ Current rules:
 - Touching a treat removes it, plays the cat sound, and turns the player into a super cat for 3 seconds.
 - The power-up timer is always visible in the HUD, dims at `0.0s` when inactive, and counts down while super cat is active.
 - While super cat is active, the cat gets a blinking border, avatars with direct line of sight run away instead of chasing, and any avatar the cat touches disappears until the next level.
+- Catching a dog while super cat is active plays the eating sound.
 - Eating dogs while super cat is active awards progressive per-level points: the first dog eaten in a level gives 1 point, the second gives 2 points, the third gives 3 points, and so on. Treats, survival time, portals, and level completion do not award points.
 - Touching the portal after it appears wins the game.
 - Winning a level advances to the next map. Winning level 20 resets the next run back to level 1.
