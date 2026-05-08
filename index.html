@@ -151,7 +151,7 @@
 
     <!-- Mobile Controls -->
     <div
-      class="mobile-controls md:hidden flex-col items-center pointer-events-auto opacity-80 z-20"
+      class="mobile-controls md:hidden items-center pointer-events-auto opacity-80 z-20"
     >
       <div
         class="mobile-joystick"
@@ -166,6 +166,15 @@
           aria-hidden="true"
         ></div>
       </div>
+      <button
+        class="mobile-power-button hidden"
+        id="mobile-power-button"
+        type="button"
+        aria-label="Activate power"
+        aria-pressed="false"
+      >
+        PWR
+      </button>
     </div>
   </body>
 </html>

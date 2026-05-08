@@ -20,6 +20,7 @@ window.onload = function () {
   const winMessage = document.getElementById("win-message");
   const startCodeInput = document.getElementById("start-code-input");
   const startCodeHelp = document.getElementById("start-code-help");
+  const mobilePowerButton = document.getElementById("mobile-power-button");
 
   // --- Game Constants ---
   const GRID_SIZE = 15;
@@ -209,6 +210,48 @@ window.onload = function () {
     }
   }
 
+  function hasMobilePowerCode() {
+    return spaceWallPassEnabled || spaceSpeedBoostEnabled;
+  }
+
+  function updateMobilePowerButton() {
+    const canUsePower = gameState === "PLAYING" && hasMobilePowerCode();
+    mobilePowerButton.classList.toggle("hidden", !canUsePower);
+    mobilePowerButton.disabled = !canUsePower;
+
+    const isActive = passThroughWalls || spaceSpeedBoostActive;
+    mobilePowerButton.classList.toggle("is-active", canUsePower && isActive);
+    mobilePowerButton.setAttribute(
+      "aria-pressed",
+      canUsePower && isActive ? "true" : "false",
+    );
+  }
+
+  function activateCodePower(isRepeat = false) {
+    if (gameState !== "PLAYING") return false;
+
+    if (spaceWallPassEnabled) {
+      if (isRepeat) return true;
+      passThroughWalls = !passThroughWalls;
+      updateMobilePowerButton();
+      return true;
+    }
+
+    if (spaceSpeedBoostEnabled) {
+      spaceSpeedBoostActive = true;
+      updateMobilePowerButton();
+      return true;
+    }
+
+    return false;
+  }
+
+  function releaseCodePower() {
+    if (!spaceSpeedBoostActive) return;
+    spaceSpeedBoostActive = false;
+    updateMobilePowerButton();
+  }
+
   function pickAvatarSpawn(preferredSpawn, usedSpawns) {
     const available = getFloorTiles(map).filter((tile) => {
       const key = `${tile.x},${tile.y}`;
@@ -342,6 +385,7 @@ window.onload = function () {
     gameOverScreen.classList.add("hidden");
     winScreen.classList.add("hidden");
     startCodeInput.blur();
+    updateMobilePowerButton();
 
     // Clear inline styles that override the Tailwind 'hidden' class
     gameOverScreen.style.display = "";
@@ -397,21 +441,8 @@ window.onload = function () {
       cat.speed = Math.max(1.0, cat.speed - 1.0); // Prevent negative/zero speed
     }
 
-    if (
-      e.code === "Space" &&
-      gameState === "PLAYING" &&
-      spaceWallPassEnabled &&
-      !e.repeat
-    ) {
+    if (e.code === "Space" && activateCodePower(e.repeat)) {
       e.preventDefault();
-      passThroughWalls = !passThroughWalls;
-    } else if (
-      e.code === "Space" &&
-      gameState === "PLAYING" &&
-      spaceSpeedBoostEnabled
-    ) {
-      e.preventDefault();
-      spaceSpeedBoostActive = true;
     } else if (
       (e.code === "Space" || e.code === "Enter") &&
       gameState === "GAMEOVER"
@@ -423,7 +454,7 @@ window.onload = function () {
   window.addEventListener("keyup", (e) => {
     if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
     if (e.code === "Space") {
-      spaceSpeedBoostActive = false;
+      releaseCodePower();
     }
     updateNextDir();
   });
@@ -500,6 +531,20 @@ window.onload = function () {
     if (e.pointerId !== activeJoystickPointer) return;
     resetJoystick();
   });
+
+  mobilePowerButton.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    mobilePowerButton.setPointerCapture(e.pointerId);
+    activateCodePower(false);
+  });
+
+  mobilePowerButton.addEventListener("pointerup", (e) => {
+    e.preventDefault();
+    releaseCodePower();
+  });
+
+  mobilePowerButton.addEventListener("pointercancel", releaseCodePower);
+  mobilePowerButton.addEventListener("lostpointercapture", releaseCodePower);
 
   // --- UI Buttons ---
   function updateStartCodeHelp() {
@@ -726,6 +771,8 @@ window.onload = function () {
     }
 
     gameState = "WIN";
+    releaseCodePower();
+    updateMobilePowerButton();
     winScreen.classList.remove("hidden");
     winScreen.style.display = "flex";
   }
@@ -842,6 +889,8 @@ window.onload = function () {
         }
 
         gameState = "GAMEOVER";
+        releaseCodePower();
+        updateMobilePowerButton();
         gameOverScreen.classList.remove("hidden");
         gameOverScreen.style.display = "flex";
       }
