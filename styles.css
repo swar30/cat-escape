@@ -89,10 +89,13 @@ canvas {
 }
 .mobile-power-button.is-active {
   background: linear-gradient(145deg, #fdba74, #f97316);
-  border-color: rgba(255, 255, 255, 0.96);
+  border-color: #fff7ed;
+  outline: 4px solid #22d3ee;
+  outline-offset: 5px;
   box-shadow:
     inset 0 3px 8px rgba(255, 255, 255, 0.34),
-    0 0 0 5px rgba(251, 146, 60, 0.24),
+    0 0 0 9px rgba(8, 47, 73, 0.72),
+    0 0 24px rgba(34, 211, 238, 0.72),
     0 14px 28px rgba(251, 146, 60, 0.38);
   transform: scale(0.97);
 }

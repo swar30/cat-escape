@@ -238,7 +238,8 @@ window.onload = function () {
     }
 
     if (spaceSpeedBoostEnabled) {
-      spaceSpeedBoostActive = true;
+      if (isRepeat) return true;
+      spaceSpeedBoostActive = !spaceSpeedBoostActive;
       updateMobilePowerButton();
       return true;
     }
@@ -453,9 +454,6 @@ window.onload = function () {
   });
   window.addEventListener("keyup", (e) => {
     if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
-    if (e.code === "Space") {
-      releaseCodePower();
-    }
     updateNextDir();
   });
 
@@ -540,11 +538,7 @@ window.onload = function () {
 
   mobilePowerButton.addEventListener("pointerup", (e) => {
     e.preventDefault();
-    releaseCodePower();
   });
-
-  mobilePowerButton.addEventListener("pointercancel", releaseCodePower);
-  mobilePowerButton.addEventListener("lostpointercapture", releaseCodePower);
 
   // --- UI Buttons ---
   function updateStartCodeHelp() {

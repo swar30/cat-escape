@@ -60,7 +60,7 @@ Current rules:
 - Speed down: `-` key.
 - Restart after game over: Space.
 - Optional start code: enter `1121` before pressing Play to let Space or the mobile power button toggle wall pass-through while playing.
-- Optional start code: enter `6767` before pressing Play to let Space or the mobile power button make the cat move 6 times faster while held.
+- Optional start code: enter `6767` before pressing Play to let Space or the mobile power button toggle 6x cat speed while playing.
 - Code help: enter `?` in the code box to show all available codes.
 
 ## Implementation Notes
