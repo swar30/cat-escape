@@ -72,6 +72,7 @@ window.onload = function () {
     d: false,
   };
   let nextDir = { x: 0, y: 0 };
+  let joystickIntent = { x: 0, y: 0, primaryAxis: null };
 
   // Entities
   let cat = {
@@ -465,6 +466,26 @@ window.onload = function () {
     else nextDir = { x: 0, y: 0 };
   }
 
+  function getCatInputMoveOptions() {
+    const input =
+      activeJoystickPointer !== null
+        ? joystickIntent
+        : { ...nextDir, primaryAxis: null };
+
+    if (input.x === 0 && input.y === 0) return [];
+
+    if (input.x === 0 || input.y === 0) {
+      return [{ x: input.x, y: input.y }];
+    }
+
+    const horizontalMove = { x: input.x, y: 0 };
+    const verticalMove = { x: 0, y: input.y };
+
+    return input.primaryAxis === "y"
+      ? [verticalMove, horizontalMove]
+      : [horizontalMove, verticalMove];
+  }
+
   // Virtual thumb joystick logic
   const joystick = document.getElementById("mobile-joystick");
   const joystickThumb = document.getElementById("joystick-thumb");
@@ -483,6 +504,7 @@ window.onload = function () {
     const distance = Math.hypot(rawX, rawY);
     const maxDistance = rect.width * 0.28;
     const deadZone = rect.width * 0.12;
+    const diagonalThreshold = rect.width * 0.08;
     const scale = distance > maxDistance ? maxDistance / distance : 1;
     const thumbX = rawX * scale;
     const thumbY = rawY * scale;
@@ -490,16 +512,34 @@ window.onload = function () {
     setJoystickThumb(thumbX, thumbY);
 
     if (distance < deadZone) {
-      nextDir = { x: 0, y: 0 };
+      joystickIntent = { x: 0, y: 0, primaryAxis: null };
+    } else if (
+      Math.abs(rawX) >= diagonalThreshold &&
+      Math.abs(rawY) >= diagonalThreshold
+    ) {
+      joystickIntent = {
+        x: rawX > 0 ? 1 : -1,
+        y: rawY > 0 ? 1 : -1,
+        primaryAxis: Math.abs(rawY) > Math.abs(rawX) ? "y" : "x",
+      };
     } else if (Math.abs(rawX) > Math.abs(rawY)) {
-      nextDir = { x: rawX > 0 ? 1 : -1, y: 0 };
+      joystickIntent = {
+        x: rawX > 0 ? 1 : -1,
+        y: 0,
+        primaryAxis: "x",
+      };
     } else {
-      nextDir = { x: 0, y: rawY > 0 ? 1 : -1 };
+      joystickIntent = {
+        x: 0,
+        y: rawY > 0 ? 1 : -1,
+        primaryAxis: "y",
+      };
     }
   }
 
   function resetJoystick() {
     activeJoystickPointer = null;
+    joystickIntent = { x: 0, y: 0, primaryAxis: null };
     joystick.classList.remove("is-active");
     setJoystickThumb(0, 0);
     updateNextDir();
@@ -796,18 +836,21 @@ window.onload = function () {
     // 1. Update Cat
     if (!cat.isMoving) {
       // Try to start moving if input exists
-      if (nextDir.x !== 0 || nextDir.y !== 0) {
-        if (
-          canMove(cat.x + nextDir.x, cat.y + nextDir.y, passThroughWalls)
-        ) {
-          cat.targetX = cat.x + nextDir.x;
-          cat.targetY = cat.y + nextDir.y;
-          cat.dir = { ...nextDir };
+      const moveOptions = getCatInputMoveOptions();
+      if (moveOptions.length > 0) {
+        const nextMove = moveOptions.find((move) =>
+          canMove(cat.x + move.x, cat.y + move.y, passThroughWalls),
+        );
+
+        if (nextMove) {
+          cat.targetX = cat.x + nextMove.x;
+          cat.targetY = cat.y + nextMove.y;
+          cat.dir = { ...nextMove };
           cat.isMoving = true;
           cat.progress = 0;
         } else {
           // Turn to face the wall even if we can't move
-          cat.dir = { ...nextDir };
+          cat.dir = { ...moveOptions[0] };
         }
       }
     }
